@@ -392,3 +392,95 @@ tennis-booking-app/
 - 🎨 Coach profile pages with photos
 - 📅 Recurring booking support
 - 🏷️ Membership tiers & pricing
+
+---
+
+## Best Practices & Lessons Learned
+
+### Next.js Static Export (GitHub Pages)
+
+| Practice | Details |
+|----------|---------|
+| **`output: 'export'`** | No API routes, no server-side rendering — everything runs client-side |
+| **`trailingSlash: true`** | Required for GitHub Pages to resolve `/courts/` → `/courts/index.html` |
+| **`basePath` handling** | `<Link href="/courts/">` auto-prepends basePath; never manually add it in Link hrefs. `fetch()` and `<img src>` DO need manual basePath prefix |
+| **SPA fallback** | Copy `index.html` → `404.html` so direct URL access / page refresh works |
+| **`generateStaticParams`** | Pre-render dynamic routes (`/classes/[id]/`). IDs beyond the list fall back to 404.html SPA routing |
+| **`.nojekyll`** | Always include — prevents GitHub Pages from ignoring `_next/` directory |
+
+### Supabase on Static Sites
+
+| Practice | Details |
+|----------|---------|
+| **Anon key only** | Never expose `service_role` key on client; rely on RLS for all access control |
+| **RLS-based admin** | Use `profiles.is_admin` column + RLS policies instead of service_role key |
+| **SECURITY DEFINER functions** | For cross-table joins that need elevated access (e.g. reading `auth.users`) |
+| **Session restore delay** | On full-page navigation, `getSession()` may return null immediately; add ~100ms delay for localStorage restoration |
+| **Polling > Realtime** | Supabase Realtime with new key format (`sb_publishable_`) may not fire `postgres_changes`; 2s polling is a reliable fallback |
+| **On-demand rows** | Don't pre-create thousands of "available" slot rows; absence = available, only store booked/closed |
+
+### Security
+
+| Practice | Details |
+|----------|---------|
+| **RLS on every table** | No exceptions — even `settings` and `profiles` |
+| **Unique partial indexes** | Prevent double-booking at DB level: `UNIQUE (booked_by, date, hour) WHERE status = 'booked'` |
+| **No secrets in build output** | Audit `out/` directory; only anon/publishable keys should appear |
+| **SECURITY DEFINER with care** | Limit to admin-only functions; always check caller permissions inside the function |
+| **Input validation** | Validate on both client (UX) and server/DB (security) — client validation alone is never enough |
+
+### Timezone Handling
+
+| Practice | Details |
+|----------|---------|
+| **Explicit timezone** | Always use `new Date().toLocaleString('en-US', { timeZone: 'Asia/Hong_Kong' })` — never rely on server/browser default |
+| **Store dates as DATE** | Supabase `date` type is timezone-agnostic; format as `YYYY-MM-DD` in HKT before sending |
+| **Compare hours in HKT** | Past-hour checks and booking windows must use HKT, not UTC |
+
+### Service Worker & PWA
+
+| Practice | Details |
+|----------|---------|
+| **Bump cache version** | Always change `CACHE_NAME` (e.g. `tennis-v2` → `tennis-v3`) when deploying breaking changes |
+| **Network-first strategy** | Ensures fresh data from Supabase; cache is fallback only |
+| **Unregister old SW** | Breaking changes (new routes, auth flow) may require users to manually unregister via DevTools |
+| **`skipWaiting()` + `clients.claim()`** | Activate new SW immediately without requiring page close/reopen |
+| **Offline fallback** | Cache critical data (bookings, enrollments) to localStorage for offline viewing |
+
+### React / Component Patterns
+
+| Practice | Details |
+|----------|---------|
+| **`'use client'` everywhere** | Required for static export — no server components with Supabase calls |
+| **`createPortal` for floating UI** | Fixed-position elements (floating booking bar) break inside parent with `transform`; render to `document.body` |
+| **Conditional nav rendering** | Use `usePathname()` to hide public nav on admin pages and vice versa |
+| **Shared layout for admin** | `app/admin/layout.tsx` handles auth guard + admin nav for all admin pages — no duplicate nav per page |
+| **generateStaticParams + client component split** | Server page.tsx for static params, client component for data fetching (e.g. `ClassDetailClient.tsx`) |
+
+### Admin Dashboard
+
+| Practice | Details |
+|----------|---------|
+| **Desktop-first with mobile fallback** | Admin is primarily desktop; mobile gets simplified single-item view (e.g. one court at a time) |
+| **Bulk actions aligned with data** | Open/Close buttons inside table header cells, aligned with their court columns |
+| **Paginated date navigation** | 14 days split into 2 pages of 7; arrow buttons switch pages — better than horizontal scroll |
+| **Configurable settings in DB** | Operating hours stored in `settings` table, not hardcoded — admin can change without redeploying |
+| **Autocomplete search** | `ILIKE '%search%'` via SECURITY DEFINER function for admin user lookup |
+
+### Performance
+
+| Practice | Details |
+|----------|---------|
+| **Skeleton loaders** | Show shimmer placeholders while data loads — better UX than blank screen or spinner |
+| **2s polling interval** | Balance between freshness and API usage; sufficient for court booking scenario |
+| **Minimal re-renders** | Separate state for independent concerns (dateIdx, selections, courts, slots) |
+| **Lazy data fetching** | Only fetch slots for the currently selected date, not all 14 days at once |
+
+### Git & Deployment
+
+| Practice | Details |
+|----------|---------|
+| **Separate branches** | `main` for source code, `gh-pages` for built output (force-pushed each deploy) |
+| **Clean gh-pages deploys** | `rm -rf .git && git init` in `out/` for each deploy — avoids accumulating old build artifacts |
+| **Commit source before deploy** | Always commit to `main` first, then build and push to `gh-pages` |
+
