@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/components/Toast';
+import SuccessAnimation from '@/components/SuccessAnimation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 
@@ -31,6 +33,8 @@ export default function ClassDetailClient() {
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState('');
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -63,6 +67,8 @@ export default function ClassDetailClient() {
     setCls({ ...cls, spots_available: cls.spots_available - 1 });
     setEnrolled(true);
     setEnrolling(false);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 2500);
   };
 
   const handleCancel = async () => {
@@ -76,6 +82,7 @@ export default function ClassDetailClient() {
     setEnrolled(false);
     setEnrollmentId(null);
     setCancelling(false);
+    toast('已取消報名');
   };
 
   if (loading) return <div className="min-h-screen bg-[#FFF8F0]" />;
@@ -98,13 +105,14 @@ export default function ClassDetailClient() {
   const spotsPercent = ((cls.spots_total - cls.spots_available) / cls.spots_total) * 100;
 
   return (
+    <>{showSuccess && <SuccessAnimation message="報名成功！" />}
     <main className="min-h-screen bg-[#FFF8F0] py-12 px-4">
       <div className="max-w-3xl mx-auto">
         <Link href="/classes/" className="inline-flex items-center gap-1 text-[#1A1A1A]/60 hover:text-[#1A1A1A] mb-6 text-sm">
           ‹ 返回課程列表
         </Link>
 
-        <div className="bg-white rounded-2xl shadow-sm p-8">
+        <div className="bg-white rounded-2xl shadow-sm p-8 animate-slide-up">
           <div className="flex items-start justify-between mb-4">
             <div>
               <span className={`${lv.color} text-white text-xs px-3 py-1 rounded-full font-bold uppercase`}>{lv.label}</span>
@@ -155,7 +163,7 @@ export default function ClassDetailClient() {
 
           {enrolled ? (
             <div className="space-y-3">
-              <div className="bg-emerald-50 text-emerald-700 py-4 rounded-2xl text-center font-bold">
+              <div className="bg-emerald-50 text-emerald-700 py-4 rounded-2xl text-center font-bold animate-bounce-in">
                 ✅ 你已報名此課程
               </div>
               <button onClick={handleCancel} disabled={cancelling}
@@ -165,7 +173,7 @@ export default function ClassDetailClient() {
             </div>
           ) : (
             <button onClick={handleEnroll} disabled={enrolling || cls.spots_available <= 0}
-              className="w-full bg-[#1A1A1A] text-[#FFF8F0] py-4 rounded-2xl font-bold text-lg hover:bg-[#1A1A1A]/80 transition-all disabled:opacity-50">
+              className="w-full bg-[#1A1A1A] text-[#FFF8F0] py-4 rounded-2xl font-bold text-lg hover:bg-[#1A1A1A]/80 hover:shadow-lg transition-all duration-300 disabled:opacity-50 active:scale-[0.98]">
               {enrolling ? '報名中...' : cls.spots_available <= 0 ? '名額已滿' : '立即報名'}
             </button>
           )}
@@ -173,5 +181,6 @@ export default function ClassDetailClient() {
         </div>
       </div>
     </main>
+    </>
   );
 }

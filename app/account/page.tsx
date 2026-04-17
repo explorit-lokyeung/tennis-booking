@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase';
 
 interface Booking {
   id: string;
+  slot_id: string;
   date: string;
   hour: number;
   courts: { name: string; surface: string };
@@ -14,7 +16,7 @@ interface Booking {
 
 interface ClassBooking {
   id: string;
-  classes: { name: string; coach: string; day: string; time: string };
+  classes: { id: string; name: string; coach: string; day: string; time: string; spots_available: number };
 }
 
 export default function AccountPage() {
@@ -22,7 +24,18 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [classBookings, setClassBookings] = useState<ClassBooking[]>([]);
+  const [offline, setOffline] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const goOffline = () => setOffline(true);
+    const goOnline = () => setOffline(false);
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online', goOnline);
+    setOffline(!navigator.onLine);
+    return () => { window.removeEventListener('offline', goOffline); window.removeEventListener('online', goOnline); };
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -55,6 +68,26 @@ export default function AccountPage() {
     router.push('/login/');
   };
 
+  const cancelBooking = async (bookingId: string, slotId: string) => {
+    if (!confirm('確定取消此預約？')) return;
+    await supabase.from('bookings').delete().eq('id', bookingId);
+    await supabase.from('slots').delete().eq('id', slotId);
+    setBookings(prev => prev.filter(b => b.id !== bookingId));
+    toast('已取消預約');
+  };
+
+  const cancelClass = async (cbId: string, classId: string) => {
+    if (!confirm('確定取消報名？')) return;
+    await supabase.from('class_bookings').delete().eq('id', cbId);
+    // Restore spot
+    const cls = classBookings.find(cb => cb.id === cbId);
+    if (cls?.classes) {
+      await supabase.from('classes').update({ spots_available: (cls.classes as any).spots_available + 1 }).eq('id', classId);
+    }
+    setClassBookings(prev => prev.filter(cb => cb.id !== cbId));
+    toast('已取消報名');
+  };
+
   const fmtHour = (h: number) => `${h > 12 ? h - 12 : h}:00 ${h >= 12 ? 'PM' : 'AM'}`;
 
   if (loading) return <main className="min-h-screen bg-[#FFF8F0]" />;
@@ -84,7 +117,12 @@ export default function AccountPage() {
             {userName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-[#1A1A1A]">{userName}</h1>
+            {offline && (
+          <div className="bg-amber-100 text-amber-800 px-4 py-2 rounded-xl text-sm text-center mb-4 font-semibold">
+            📡 離線模式 — 顯示上次緩存嘅預約資料
+          </div>
+        )}
+        <h1 className="text-xl font-bold text-[#1A1A1A]">{userName}</h1>
             <p className="text-sm text-[#1A1A1A]/50">{user.email}</p>
           </div>
           <button onClick={handleLogout} className="text-sm text-red-500 font-semibold hover:underline">
@@ -102,7 +140,10 @@ export default function AccountPage() {
                 <p className="font-semibold text-[#1A1A1A]">{b.courts?.name} <span className="text-xs text-[#1A1A1A]/40">({b.courts?.surface})</span></p>
                 <p className="text-sm text-[#1A1A1A]/50">{b.date} · {fmtHour(b.hour)}</p>
               </div>
-              <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-semibold">已確認</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-semibold">已確認</span>
+                <button onClick={() => cancelBooking(b.id, b.slot_id)} className="text-xs text-red-400 hover:text-red-600 font-semibold transition-colors px-2 py-1 rounded-lg hover:bg-red-50">取消</button>
+              </div>
             </div>
           ))}
         </div>
@@ -117,7 +158,10 @@ export default function AccountPage() {
                 <p className="font-semibold text-[#1A1A1A]">{cb.classes?.name}</p>
                 <p className="text-sm text-[#1A1A1A]/50">{cb.classes?.day} {cb.classes?.time} · {cb.classes?.coach}</p>
               </div>
-              <span className="text-xs bg-[#C4A265]/10 text-[#C4A265] px-3 py-1 rounded-full font-semibold">已報名</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-[#C4A265]/10 text-[#C4A265] px-3 py-1 rounded-full font-semibold">已報名</span>
+                <button onClick={() => cancelClass(cb.id, cb.classes?.id)} className="text-xs text-red-400 hover:text-red-600 font-semibold transition-colors px-2 py-1 rounded-lg hover:bg-red-50">取消</button>
+              </div>
             </div>
           ))}
         </div>

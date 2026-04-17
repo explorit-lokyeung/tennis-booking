@@ -62,7 +62,7 @@ export default function LoginPage() {
           <span className="text-2xl font-black tracking-tight text-[#1A1A1A]">TENNIS CLUB</span>
         </Link>
 
-        <div className="bg-white rounded-2xl shadow-sm p-8">
+        <div className="bg-white rounded-2xl shadow-sm p-8 animate-bounce-in">
           {/* Tabs */}
           <div className="flex mb-6 bg-[#FFF8F0] rounded-xl p-1">
             {(['login', 'register'] as const).map(t => (

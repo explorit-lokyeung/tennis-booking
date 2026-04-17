@@ -12,21 +12,19 @@ export default function AdminLoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if already logged in as admin
-    checkAdmin();
-  }, []);
-
-  const checkAdmin = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
-      if (profile?.is_admin) {
-        router.push('/admin/classes/');
-        return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single();
+        if (profile?.is_admin) {
+          // router.push('/admin/classes/');
+        setLoading(false); // Show login form even if admin
+          return;
+        }
       }
-    }
-    setLoading(false);
-  };
+      setLoading(false);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +47,8 @@ export default function AdminLoginPage() {
       return;
     }
 
-    router.push('/admin/classes/');
+    // router.push('/admin/classes/');
+        setLoading(false); // Show login form even if admin
   };
 
   if (loading) return <div className="min-h-screen bg-[#FFF8F0]" />;

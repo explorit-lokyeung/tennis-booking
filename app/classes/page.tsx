@@ -69,7 +69,7 @@ export default function ClassesPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-in mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Level Filter */}
             <div>

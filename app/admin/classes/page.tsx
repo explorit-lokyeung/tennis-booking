@@ -17,6 +17,8 @@ type TennisClass = {
   price: number;
   description: string;
   visible?: boolean;
+  start_date?: string;
+  end_date?: string;
 };
 
 export default function AdminClassesPage() {
@@ -29,6 +31,7 @@ export default function AdminClassesPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const router = useRouter();
+  const [pageLoading, setPageLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<TennisClass>>({
@@ -43,17 +46,28 @@ export default function AdminClassesPage() {
     price: 0,
     description: '',
     visible: true,
+    start_date: '',
+    end_date: '',
   });
 
   useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/admin/'); return; }
-      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
+    let cancelled = false;
+    const check = async () => {
+      // Wait for Supabase to restore session from localStorage
+      await new Promise(r => setTimeout(r, 500));
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('[ADMIN DEBUG] session:', session ? 'EXISTS user=' + session.user.email : 'NULL');
+      console.log('[ADMIN DEBUG] localStorage keys:', Object.keys(localStorage).filter(k => k.includes('supabase') || k.includes('sb-')));
+      if (cancelled) return;
+      if (!session?.user) { console.log('[ADMIN DEBUG] NO SESSION'); setPageLoading(false); return; }
+      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single();
+      if (cancelled) return;
       if (!profile?.is_admin) { router.push('/admin/'); return; }
+      setPageLoading(false);
       fetchClasses();
     };
-    init();
+    check();
+    return () => { cancelled = true; };
   }, []);
 
   const fetchParticipants = async (classId: string) => {
@@ -162,6 +176,8 @@ export default function AdminClassesPage() {
       price: 0,
       description: '',
       visible: true,
+      start_date: '',
+      end_date: '',
     });
   };
 
@@ -277,6 +293,25 @@ export default function AdminClassesPage() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-[#1A1A1A] mb-1">開始日期</label>
+              <input
+                type="date"
+                value={formData.start_date || ''}
+                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-[#1A1A1A]/20 bg-white text-[#1A1A1A] focus:outline-none focus:border-[#C4A265]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#1A1A1A] mb-1">結束日期</label>
+              <input
+                type="date"
+                value={formData.end_date || ''}
+                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-[#1A1A1A]/20 bg-white text-[#1A1A1A] focus:outline-none focus:border-[#C4A265]"
+              />
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-[#1A1A1A] mb-1">價格</label>
               <input
                 type="number"
@@ -349,6 +384,9 @@ export default function AdminClassesPage() {
                 <div>名額：{cls.spots_available}/{cls.spots_total}</div>
                 <div>地點：{cls.location}</div>
                 <div>價格：${cls.price}</div>
+                {(cls.start_date || cls.end_date) && (
+                  <div>日期：{cls.start_date || '?'} → {cls.end_date || '?'}</div>
+                )}
               </div>
             </div>
             <div className="flex gap-2 ml-4 flex-wrap">

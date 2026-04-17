@@ -24,15 +24,20 @@ export default function AdminBookingsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/admin/'); return; }
-      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
+    let cancelled = false;
+    const check = async () => {
+      await new Promise(r => setTimeout(r, 100));
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (!session?.user) { router.push('/admin/'); return; }
+      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single();
+      if (cancelled) return;
       if (!profile?.is_admin) { router.push('/admin/'); return; }
       fetchBookings();
     };
-    checkAuth();
-  }, [router]);
+    check();
+    return () => { cancelled = true; };
+  }, []);
 
   const fetchBookings = async () => {
     const { data } = await supabase.from('bookings').select('*').order('date', { ascending: false });
@@ -52,16 +57,7 @@ export default function AdminBookingsPage() {
   const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
   return (
-    <div className="min-h-screen bg-[#FFF8F0]">
-      <nav className="bg-[#1A1A1A] text-[#FFF8F0] px-6 py-3 flex items-center gap-6">
-        <span className="font-bold">管理員</span>
-        <Link href="/admin/classes/" className="text-sm hover:text-[#C4A265]">課堂</Link>
-        <Link href="/admin/courts/" className="text-sm hover:text-[#C4A265]">場地</Link>
-        <Link href="/admin/bookings/" className="text-sm text-[#C4A265]">預約</Link>
-        <button onClick={() => { supabase.auth.signOut().then(() => router.push('/admin/')); }} className="ml-auto text-sm text-red-400">登出</button>
-      </nav>
-
-      <div className="max-w-5xl mx-auto px-4 py-6">
+    <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-[#1A1A1A]">預約管理</h1>
           <span className="text-sm text-[#1A1A1A]/50">共 {bookings.length} 個預約</span>
@@ -98,7 +94,6 @@ export default function AdminBookingsPage() {
             })}
           </div>
         )}
-      </div>
     </div>
   );
 }

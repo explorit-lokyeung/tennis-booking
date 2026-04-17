@@ -1,42 +1,36 @@
 'use client';
+import { useState, useEffect, createContext, useContext, useCallback } from 'react';
 
-import { useEffect } from 'react';
+type ToastType = 'success' | 'error' | 'info';
+type Toast = { id: number; message: string; type: ToastType };
 
-type ToastProps = {
-  message: string;
-  type?: 'success' | 'error' | 'info';
-  onClose: () => void;
-  duration?: number;
-};
+const ToastContext = createContext<{ toast: (msg: string, type?: ToastType) => void }>({ toast: () => {} });
 
-export default function Toast({ message, type = 'success', onClose, duration = 3000 }: ToastProps) {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, duration);
+export function useToast() { return useContext(ToastContext); }
 
-    return () => clearTimeout(timer);
-  }, [duration, onClose]);
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  let counter = 0;
 
-  const bgColors = {
-    success: 'bg-green-500',
-    error: 'bg-red-500',
-    info: 'bg-[#C4A265]',
-  };
+  const toast = useCallback((message: string, type: ToastType = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  }, []);
+
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const colors = { success: 'bg-emerald-600', error: 'bg-red-600', info: 'bg-[#1A1A1A]' };
 
   return (
-    <div className="fixed bottom-8 right-8 z-50 animate-slide-up">
-      <div className={`${bgColors[type]} text-white px-6 py-4 rounded-2xl shadow-lg flex items-center gap-3 max-w-md`}>
-        <span className="font-medium">{message}</span>
-        <button
-          onClick={onClose}
-          className="ml-auto text-white/80 hover:text-white transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-            <path d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+    <ToastContext.Provider value={{ toast }}>
+      {children}
+      <div className="fixed top-4 right-4 z-[999] space-y-2 pointer-events-none">
+        {toasts.map(t => (
+          <div key={t.id} className={`${colors[t.type]} text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center gap-2 animate-slide-in pointer-events-auto`}>
+            <span>{icons[t.type]}</span> {t.message}
+          </div>
+        ))}
       </div>
-    </div>
+    </ToastContext.Provider>
   );
 }
