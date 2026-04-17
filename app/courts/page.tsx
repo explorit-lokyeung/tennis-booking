@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 
 interface Court {
-  id: number;
+  id: string;
   name: string;
   surface: string;
   indoor: boolean;
@@ -15,15 +15,16 @@ interface Court {
 }
 
 interface Slot {
-  id: number;
-  court_id: number;
+  id: string;
+  court_id: string;
   date: string;
   hour: number;
-  status: 'available' | 'booked';
+  status: 'booked' | 'closed';
+  price?: number | null;
   booked_by: string | null;
 }
 
-type Selection = { courtId: number; slotId: number; hour: number };
+type Selection = { courtId: string; hour: number };
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7);
 const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
@@ -82,63 +83,56 @@ export default function CourtsPage() {
     };
     fetchSlots();
 
-    // Subscribe to real-time slot changes
-    const channel = supabase
-      .channel('slots-realtime')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'slots' },
-        (payload) => {
-          setSlots((prev) =>
-            prev.map((s) => (s.id === payload.new.id ? (payload.new as Slot) : s))
-          );
-        }
-      )
-      .subscribe();
+    // Poll for slot updates every 5 seconds
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from('slots')
+        .select('*')
+        .eq('date', dateStr);
+      if (data) setSlots(data);
+    }, 2000);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => clearInterval(interval);
   }, [dateIdx]);
 
-  const getSlotForCourtAndHour = (courtId: number, hour: number) => {
+  const getSlotForCourtAndHour = (courtId: string, hour: number) => {
     return slots.find((s) => s.court_id === courtId && s.hour === hour);
   };
 
-  const isSelected = (courtId: number, hour: number) =>
+  const isSelected = (courtId: string, hour: number) =>
     selections.some((s) => s.courtId === courtId && s.hour === hour);
 
-  const handleSlotClick = (courtId: number, hour: number, slotId: number) => {
+  const handleSlotClick = (courtId: string, hour: number) => {
     if (isSelected(courtId, hour)) {
       setSelections((prev) => prev.filter((s) => !(s.courtId === courtId && s.hour === hour)));
       return;
     }
 
     if (selections.length === 0) {
-      setSelections([{ courtId, slotId, hour }]);
+      setSelections([{ courtId, hour }]);
       return;
     }
 
     // Must be same court
     if (selections[0].courtId !== courtId) {
-      setSelections([{ courtId, slotId, hour }]);
+      setSelections([{ courtId, hour }]);
       return;
     }
 
     // Max 2 sessions, must be consecutive
     if (selections.length >= 2) {
-      setSelections([{ courtId, slotId, hour }]);
+      setSelections([{ courtId, hour }]);
       return;
     }
 
     const existingHour = selections[0].hour;
     if (Math.abs(hour - existingHour) === 1) {
       // Consecutive — add it (keep sorted)
-      const newSels = [...selections, { courtId, slotId, hour }].sort((a, b) => a.hour - b.hour);
+      const newSels = [...selections, { courtId, hour }].sort((a, b) => a.hour - b.hour);
       setSelections(newSels);
     } else {
       // Not consecutive — start fresh
-      setSelections([{ courtId, slotId, hour }]);
+      setSelections([{ courtId, hour }]);
     }
   };
 
@@ -152,37 +146,39 @@ export default function CourtsPage() {
     setError('');
 
     try {
-      // Update each selected slot
-      for (const selection of selections) {
-        const { error: updateError } = await supabase
-          .from('slots')
-          .update({
-            status: 'booked',
-            booked_by: user.id,
-          })
-          .eq('id', selection.slotId)
-          .eq('status', 'available'); // Only update if still available (race condition check)
+      const selectedDate = dates[dateIdx];
+      const dateStr = selectedDate.toISOString().split('T')[0];
 
-        if (updateError) {
-          setError('預約失敗，時段可能已被預訂。');
-          setLoading(false);
-          return;
-        }
+      // Insert new slot rows with status='booked' for each selection
+      const slotRows = selections.map(s => ({
+        court_id: s.courtId,
+        date: dateStr,
+        hour: s.hour,
+        status: 'booked',
+        booked_by: user.id,
+      }));
+
+      const { data: insertedSlots, error: slotError } = await supabase
+        .from('slots')
+        .insert(slotRows)
+        .select();
+
+      if (slotError) {
+        // Race condition: slot already exists (someone booked it or admin closed it)
+        setError('預約失敗，時段可能已被預訂，或你已預約咗同一時間嘅其他場地。');
+        setLoading(false);
+        return;
       }
 
       // Insert into bookings table
-      const selectedDate = dates[dateIdx];
-      const dateStr = selectedDate.toISOString().split('T')[0];
-      const selectedCourt = courts.find((c) => c.id === selections[0].courtId);
-
-      const { error: bookingError } = await supabase.from('bookings').insert({
+      const bookingRows = insertedSlots.map((slot, idx) => ({
         user_id: user.id,
-        court_id: selections[0].courtId,
+        slot_id: slot.id,
+        court_id: selections[idx].courtId,
         date: dateStr,
-        start_hour: selections[0].hour,
-        end_hour: selections[selections.length - 1].hour + 1,
-        total_price: selectedCourt ? selectedCourt.hourly_rate * selections.length : 0,
-      });
+        hour: selections[idx].hour,
+      }));
+      const { error: bookingError } = await supabase.from('bookings').insert(bookingRows);
 
       if (bookingError) {
         setError('預約失敗，請稍後再試。');
@@ -269,13 +265,13 @@ export default function CourtsPage() {
                     </td>
                     {courts.map((c) => {
                       const slot = getSlotForCourtAndHour(c.id, h);
-                      const avail = slot?.status === 'available';
+                      const avail = !slot; // No row = available
                       const sel = isSelected(c.id, h);
                       return (
                         <td key={c.id} className="p-1.5">
                           <button
                             disabled={!avail}
-                            onClick={() => avail && slot && handleSlotClick(c.id, h, slot.id)}
+                            onClick={() => avail && handleSlotClick(c.id, h)}
                             className={`w-full py-2.5 rounded-lg text-xs font-semibold transition-all ${
                               sel
                                 ? 'bg-[#C4A265] text-white ring-2 ring-[#C4A265] ring-offset-2'

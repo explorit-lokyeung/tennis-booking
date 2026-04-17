@@ -26,7 +26,7 @@ export default function ClassesPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
-    supabase.from('classes').select('*').then(({ data }) => {
+    supabase.from('classes').select('*').neq('visible', false).then(({ data }) => {
       if (!data) return;
       const mapped = data.map((c: any) => ({
         ...c, 
@@ -58,7 +58,7 @@ export default function ClassesPage() {
   }, [levelFilter, searchQuery, classes]);
 
   return (
-    <div className="min-h-screen py-12 px-4">
+    <div className="min-h-screen py-12 px-4 bg-[#FFF8F0]">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-12">

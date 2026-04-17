@@ -28,7 +28,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#FFF8F0]">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#1A1A1A] to-[#3A3A3A] text-white py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
@@ -81,7 +81,7 @@ export default function Home() {
       </section>
 
       {/* Featured Classes */}
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 bg-[#FFF8F0]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-[#1A1A1A] mb-4">精選課程</h2>
