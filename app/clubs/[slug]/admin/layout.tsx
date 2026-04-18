@@ -17,14 +17,22 @@ export default function ClubAdminLayout({ children }: { children: React.ReactNod
   const { membership, loading: mbLoading } = useMembership(club?.id, user?.id);
   const [checked, setChecked] = useState(false);
 
+  // Track whether membership has ever been non-null to avoid race condition redirect
+  const [mbReady, setMbReady] = useState(false);
+
+  useEffect(() => {
+    if (membership !== null) setMbReady(true);
+  }, [membership]);
+
   useEffect(() => {
     if (authLoading || clubLoading || mbLoading) return;
     if (!club) return;
     if (!user) { router.push('/login'); return; }
-    console.log('[admin-layout] user:', user.id, 'club:', club.id, 'membership:', membership, 'hasRole:', hasRole(membership, 'admin', 'owner'));
+    // Wait for membership to settle — first render may have null before data arrives
+    if (!mbReady && membership === null) return;
     if (!hasRole(membership, 'admin', 'owner')) { router.push(`/clubs/${slug}`); return; }
     setChecked(true);
-  }, [authLoading, clubLoading, mbLoading, user, membership, slug, router, club]);
+  }, [authLoading, clubLoading, mbLoading, user, membership, slug, router, club, mbReady]);
 
   if (!checked) {
     return (

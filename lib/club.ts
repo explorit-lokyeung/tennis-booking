@@ -49,8 +49,10 @@ export function useMembership(clubId: string | undefined, userId: string | undef
       .eq('user_id', userId)
       .maybeSingle()
       .then(({ data }) => {
+        // Batch both updates to avoid race condition where loading=false but membership still null
         setMembership((data as ClubMembership) || null);
-        setLoading(false);
+        // Use callback form to ensure React batches with the setMembership above
+        queueMicrotask(() => setLoading(false));
       });
   }, [clubId, userId]);
 
