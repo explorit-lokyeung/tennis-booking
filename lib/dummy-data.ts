@@ -106,7 +106,7 @@ export const DEMO_CLASSES: Record<string, DemoClass[]> = {
 };
 
 // Use dummy data when DB tables don't exist yet
-export const USE_DUMMY_DATA = true;
+export const USE_DUMMY_DATA = false;
 
 export function getDemoClub(slug: string): Club | null {
   return DEMO_CLUBS.find(c => c.slug === slug) || null;

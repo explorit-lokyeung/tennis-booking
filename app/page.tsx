@@ -2,38 +2,28 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { USE_DUMMY_DATA, getDemoClubs } from '@/lib/dummy-data';
+import { getClubs, getPlatformStats, type PlatformStats } from '@/lib/queries';
 import type { Club } from '@/lib/types';
 
 export default function PlatformLandingPage() {
   const [clubs, setClubs] = useState<Club[]>([]);
+  const [stats, setStats] = useState<PlatformStats>({ clubs: 0, courts: 0, classes: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (USE_DUMMY_DATA) {
-      setClubs(getDemoClubs());
+    Promise.all([getClubs(), getPlatformStats()]).then(([all, s]) => {
+      setClubs(all.slice(0, 6));
+      setStats(s);
       setLoading(false);
-      return;
-    }
-    supabase
-      .from('clubs')
-      .select('*')
-      .eq('is_active', true)
-      .order('name')
-      .limit(6)
-      .then(({ data }) => {
-        if (data) setClubs(data as Club[]);
-        setLoading(false);
-      });
+    });
   }, []);
 
   return (
     <div className="min-h-screen bg-[#FFF8F0]">
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-[#1A1A1A] to-[#3A3A3A] text-white py-24 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="absolute top-10 right-10 text-8xl opacity-10 animate-bounce-in hidden md:block">🎾</div>
+      <section className="relative bg-gradient-to-br from-[#1A1A1A] to-[#3A3A3A] text-white py-24 px-4 overflow-hidden">
+        <div className="absolute top-10 right-10 text-8xl opacity-10 animate-bounce-in hidden md:block">🎾</div>
+        <div className="max-w-6xl mx-auto text-center relative">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
             網球<span className="text-[#C4A265]">平台</span>
           </h1>
@@ -47,6 +37,24 @@ export default function PlatformLandingPage() {
             <Link href="/account" className="border-2 border-white/40 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/10 transition-colors">
               我的帳戶
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats bar */}
+      <section className="py-10 px-4 bg-white border-b border-[#1A1A1A]/10">
+        <div className="max-w-4xl mx-auto grid grid-cols-3 gap-4 text-center">
+          <div>
+            <p className="text-4xl md:text-5xl font-bold text-[#1A1A1A]">{stats.clubs}</p>
+            <p className="text-xs md:text-sm text-[#1A1A1A]/50 uppercase tracking-wider mt-1">球會</p>
+          </div>
+          <div>
+            <p className="text-4xl md:text-5xl font-bold text-[#1A1A1A]">{stats.courts}</p>
+            <p className="text-xs md:text-sm text-[#1A1A1A]/50 uppercase tracking-wider mt-1">球場</p>
+          </div>
+          <div>
+            <p className="text-4xl md:text-5xl font-bold text-[#1A1A1A]">{stats.classes}</p>
+            <p className="text-xs md:text-sm text-[#1A1A1A]/50 uppercase tracking-wider mt-1">課程</p>
           </div>
         </div>
       </section>
@@ -92,6 +100,41 @@ export default function PlatformLandingPage() {
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Value props */}
+      <section className="py-16 px-4 bg-white border-t border-[#1A1A1A]/10">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#1A1A1A] text-center mb-12">點解揀我哋</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">🏟️</div>
+              <h3 className="font-bold text-[#1A1A1A] text-lg mb-2">多個球會，一個帳戶</h3>
+              <p className="text-sm text-[#1A1A1A]/60">一次登入，管理你喺唔同球會嘅會籍同預約。</p>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">⚡</div>
+              <h3 className="font-bold text-[#1A1A1A] text-lg mb-2">即時預約</h3>
+              <p className="text-sm text-[#1A1A1A]/60">睇到可用時段即刻book，唔駛等電話通知。</p>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">🎓</div>
+              <h3 className="font-bold text-[#1A1A1A] text-lg mb-2">專業教練</h3>
+              <p className="text-sm text-[#1A1A1A]/60">由初級到高級，搵到適合你嘅課程。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA for club owners */}
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto bg-gradient-to-br from-[#C4A265] to-[#A38850] rounded-3xl p-10 text-center text-white">
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">你係球會東主？</h2>
+          <p className="text-white/90 mb-6 max-w-xl mx-auto">加入平台，管理會員、球場同課程，幫你嘅球會上線。</p>
+          <a href="mailto:hello@tennisplatform.hk" className="inline-block bg-[#1A1A1A] text-white px-8 py-3 rounded-full font-bold text-sm uppercase tracking-wider hover:bg-black transition-colors">
+            聯絡我哋
+          </a>
         </div>
       </section>
     </div>

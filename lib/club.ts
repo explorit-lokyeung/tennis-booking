@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from './supabase';
-import type { Club, ClubMembership, MembershipRole, MembershipStatus } from './types';
+import type { Club, ClubMembership, MembershipRole } from './types';
 
 export function useClub(slug: string | undefined) {
   const [club, setClub] = useState<Club | null>(null);
@@ -64,4 +64,27 @@ export function isApprovedMember(m: ClubMembership | null): boolean {
 export function hasRole(m: ClubMembership | null, ...roles: MembershipRole[]): boolean {
   if (!m || m.status !== 'approved') return false;
   return roles.includes(m.role);
+}
+
+export function isClubAdmin(m: ClubMembership | null): boolean {
+  return hasRole(m, 'admin', 'owner');
+}
+
+/**
+ * Fetch a user's approved role in a specific club, or null if none.
+ * Prefer `useMembership` inside React components; this is for imperative
+ * flows (guards, callbacks, non-hook helpers).
+ */
+export async function getUserClubRole(
+  clubId: string,
+  userId: string
+): Promise<MembershipRole | null> {
+  const { data } = await supabase
+    .from('club_memberships')
+    .select('role,status')
+    .eq('club_id', clubId)
+    .eq('user_id', userId)
+    .eq('status', 'approved')
+    .maybeSingle();
+  return (data?.role as MembershipRole) ?? null;
 }

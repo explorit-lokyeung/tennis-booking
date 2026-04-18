@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
@@ -33,6 +33,7 @@ export default function AccountPage() {
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [classBookings, setClassBookings] = useState<ClassBookingRow[]>([]);
   const [offline, setOffline] = useState(false);
+  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
   const router = useRouter();
   const { toast } = useToast();
 
@@ -103,6 +104,14 @@ export default function AccountPage() {
 
   const fmtHour = (h: number) => `${h > 12 ? h - 12 : h}:00 ${h >= 12 ? 'PM' : 'AM'}`;
 
+  const { upcoming, past } = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return {
+      upcoming: bookings.filter(b => b.date >= today),
+      past: bookings.filter(b => b.date < today),
+    };
+  }, [bookings]);
+
   if (loading) return <main className="min-h-screen bg-[#FFF8F0]" />;
 
   if (!user) {
@@ -123,6 +132,10 @@ export default function AccountPage() {
   const userName = user.user_metadata?.name || user.email?.split('@')[0] || '用戶';
   const approved = memberships.filter(m => m.status === 'approved');
   const pending = memberships.filter(m => m.status === 'pending');
+  const coachMemberships = approved.filter(m => m.role === 'coach');
+  const shown = tab === 'upcoming' ? upcoming : past;
+
+  const icalUrl = `/api/ical?user_id=${user.id}`;
 
   return (
     <main className="min-h-screen bg-[#FFF8F0]">
@@ -144,6 +157,19 @@ export default function AccountPage() {
             登出
           </button>
         </div>
+
+        {coachMemberships.length > 0 && (
+          <Link href="/coach" className="block bg-gradient-to-br from-[#1A1A1A] to-[#3A3A3A] text-white rounded-2xl shadow-sm p-5 mb-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-[#C4A265] font-bold mb-1">教練模式</p>
+                <p className="font-bold">查看我嘅教學課堂</p>
+                <p className="text-xs text-white/60 mt-1">於 {coachMemberships.length} 間球會</p>
+              </div>
+              <span className="text-2xl">→</span>
+            </div>
+          </Link>
+        )}
 
         <h2 className="text-lg font-bold text-[#1A1A1A] mb-3">我的球會 ({approved.length})</h2>
         <div className="space-y-3 mb-4">
@@ -176,11 +202,30 @@ export default function AccountPage() {
           </div>
         )}
 
-        <h2 className="text-lg font-bold text-[#1A1A1A] mb-3 mt-8">我的球場預約</h2>
+        <div className="flex items-center justify-between mt-8 mb-3">
+          <h2 className="text-lg font-bold text-[#1A1A1A]">我的球場預約</h2>
+          {bookings.length > 0 && (
+            <a href={icalUrl} className="text-xs text-[#C4A265] font-semibold hover:underline" download="tennis-bookings.ics">
+              匯出到日曆 (ical)
+            </a>
+          )}
+        </div>
+
+        <div className="flex gap-2 mb-3">
+          {(['upcoming', 'past'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
+                tab === t ? 'bg-[#1A1A1A] text-[#FFF8F0]' : 'bg-white text-[#1A1A1A]/50'
+              }`}>
+              {t === 'upcoming' ? `未來 (${upcoming.length})` : `過去 (${past.length})`}
+            </button>
+          ))}
+        </div>
+
         <div className="space-y-3 mb-8">
-          {bookings.length === 0 ? (
-            <p className="text-[#1A1A1A]/40 text-sm">暫無預約</p>
-          ) : bookings.map(b => (
+          {shown.length === 0 ? (
+            <p className="text-[#1A1A1A]/40 text-sm">{tab === 'upcoming' ? '暫無預約' : '未有紀錄'}</p>
+          ) : shown.map(b => (
             <div key={b.id} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
               <div>
                 <p className="font-semibold text-[#1A1A1A]">
@@ -191,7 +236,9 @@ export default function AccountPage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-semibold">已確認</span>
-                <button onClick={() => cancelBooking(b.id, b.slot_id)} className="text-xs text-red-400 hover:text-red-600 font-semibold px-2 py-1 rounded-lg hover:bg-red-50">取消</button>
+                {tab === 'upcoming' && (
+                  <button onClick={() => cancelBooking(b.id, b.slot_id)} className="text-xs text-red-400 hover:text-red-600 font-semibold px-2 py-1 rounded-lg hover:bg-red-50">取消</button>
+                )}
               </div>
             </div>
           ))}

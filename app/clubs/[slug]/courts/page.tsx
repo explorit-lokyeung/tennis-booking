@@ -9,6 +9,7 @@ import SuccessAnimation from '@/components/SuccessAnimation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { useClub, useMembership, isApprovedMember } from '@/lib/club';
+import { getBookingPolicy, isWithinAdvanceWindow, getUserDayBookingCount, DEFAULT_POLICY, type BookingPolicy } from '@/lib/policy';
 import type { Court, Slot, Visibility } from '@/lib/types';
 
 type Selection = { courtId: string; hour: number };
@@ -30,6 +31,7 @@ export default function ClubCourtsPage() {
   const approved = isApprovedMember(membership);
 
   const [courts, setCourts] = useState<Court[]>([]);
+  const [policy, setPolicy] = useState<BookingPolicy>(DEFAULT_POLICY);
   const [operatingHours, setOperatingHours] = useState({ open: 7, close: 23 });
   const hours = Array.from({ length: operatingHours.close - operatingHours.open }, (_, i) => i + operatingHours.open);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -45,13 +47,14 @@ export default function ClubCourtsPage() {
   const nowHK = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Hong_Kong' }));
   const currentHKHour = nowHK.getHours();
 
+  const advanceDays = approved ? policy.advance_days : policy.advance_days_public;
+
   const isViewOnly = (idx: number) => {
-    if (idx === 7) return true;
-    if (idx === 6 && currentHKHour < 9) return true;
-    return false;
+    // Outside the user's bookable window = preview only.
+    return idx >= advanceDays;
   };
 
-  const dates = Array.from({ length: 8 }, (_, i) => {
+  const dates = Array.from({ length: Math.max(advanceDays, 8) }, (_, i) => {
     const d = new Date(nowHK);
     d.setDate(d.getDate() + i);
     return d;
@@ -69,6 +72,7 @@ export default function ClubCourtsPage() {
     supabase.from('courts').select('*').eq('club_id', club.id).order('id').then(({ data }) => {
       if (data) setCourts(data as Court[]);
     });
+    getBookingPolicy(club.id).then(setPolicy);
   }, [club]);
 
   useEffect(() => {
@@ -117,6 +121,21 @@ export default function ClubCourtsPage() {
 
     try {
       const dateStr = dates[dateIdx].toISOString().split('T')[0];
+
+      if (!isWithinAdvanceWindow(dateStr, approved, policy)) {
+        setError(`超出預約窗口（${approved ? policy.advance_days : policy.advance_days_public} 日內）。`);
+        setLoading(false);
+        return;
+      }
+
+      if (policy.daily_limit > 0) {
+        const already = await getUserDayBookingCount(club.id, user.id, dateStr);
+        if (already + selections.length > policy.daily_limit) {
+          setError(`每日最多 ${policy.daily_limit} 個時段，你已預約 ${already} 個。`);
+          setLoading(false);
+          return;
+        }
+      }
       const slotRows = selections.map(s => ({
         club_id: club.id,
         court_id: s.courtId,

@@ -5,8 +5,8 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
-import { useClub, useMembership, hasRole, isApprovedMember } from '@/lib/club';
-import { USE_DUMMY_DATA, getDemoClub, getDemoCourts, getDemoClasses } from '@/lib/dummy-data';
+import { useClub, useMembership, isClubAdmin, isApprovedMember } from '@/lib/club';
+import { getClubCourts, getClubClasses } from '@/lib/queries';
 import type { Court, TennisClass, Visibility } from '@/lib/types';
 
 const vizBadge: Record<Visibility, { label: string; cls: string }> = {
@@ -19,39 +19,37 @@ export default function ClubHomepage() {
   const params = useParams();
   const slug = params?.slug as string;
   const { user } = useAuth();
-  const { club: dbClub, loading } = useClub(slug);
-  const club = USE_DUMMY_DATA ? getDemoClub(slug) : dbClub;
+  const { club, loading } = useClub(slug);
   const { membership } = useMembership(club?.id, user?.id);
 
   const [courts, setCourts] = useState<Court[]>([]);
   const [classes, setClasses] = useState<TennisClass[]>([]);
   const [joining, setJoining] = useState(false);
   const [joinMsg, setJoinMsg] = useState('');
+  const [showJoinMenu, setShowJoinMenu] = useState(false);
 
   useEffect(() => {
     if (!club) return;
-    if (USE_DUMMY_DATA) {
-      setCourts(getDemoCourts(club.id) as unknown as Court[]);
-      setClasses(getDemoClasses(club.id) as unknown as TennisClass[]);
-      return;
-    }
-    supabase.from('courts').select('*').eq('club_id', club.id).order('name')
-      .then(({ data }) => { if (data) setCourts(data as Court[]); });
-    supabase.from('classes').select('*').eq('club_id', club.id).neq('visible', false).order('id')
-      .then(({ data }) => { if (data) setClasses(data as TennisClass[]); });
+    getClubCourts(club.id).then(setCourts);
+    getClubClasses(club.id).then(setClasses);
   }, [club]);
 
-  const handleJoin = async () => {
+  const handleJoin = async (role: 'member' | 'coach') => {
     if (!user || !club) return;
     setJoining(true);
+    setShowJoinMenu(false);
     const { error } = await supabase.from('club_memberships').insert({
-      club_id: club.id, user_id: user.id, role: 'member', status: 'pending',
+      club_id: club.id, user_id: user.id, role, status: 'pending',
     });
     setJoining(false);
-    setJoinMsg(error ? '申請失敗：' + error.message : '申請已提交，等待審批');
+    if (error) {
+      setJoinMsg('申請失敗：' + error.message);
+    } else {
+      setJoinMsg(role === 'coach' ? '教練申請已提交，等待審批' : '申請已提交，等待審批');
+    }
   };
 
-  if (loading && !USE_DUMMY_DATA) return <main className="min-h-screen bg-[#FFF8F0]" />;
+  if (loading) return <main className="min-h-screen bg-[#FFF8F0]" />;
   if (!club) {
     return (
       <main className="min-h-screen bg-[#FFF8F0] flex items-center justify-center">
@@ -64,7 +62,7 @@ export default function ClubHomepage() {
   }
 
   const approved = isApprovedMember(membership);
-  const isAdmin = hasRole(membership, 'admin', 'owner');
+  const isAdmin = isClubAdmin(membership);
 
   return (
     <main className="min-h-screen bg-[#FFF8F0]">
@@ -86,10 +84,22 @@ export default function ClubHomepage() {
                   登入加入
                 </Link>
               ) : !membership ? (
-                <button onClick={handleJoin} disabled={joining}
-                  className="bg-[#C4A265] text-[#1A1A1A] px-6 py-3 rounded-full font-bold hover:bg-[#D4B275] transition-colors disabled:opacity-50">
-                  {joining ? '提交中...' : '申請加入'}
-                </button>
+                <div className="relative">
+                  <button onClick={() => setShowJoinMenu(v => !v)} disabled={joining}
+                    className="bg-[#C4A265] text-[#1A1A1A] px-6 py-3 rounded-full font-bold hover:bg-[#D4B275] transition-colors disabled:opacity-50">
+                    {joining ? '提交中...' : '申請加入 ▾'}
+                  </button>
+                  {showJoinMenu && (
+                    <div className="absolute right-0 mt-2 bg-white text-[#1A1A1A] rounded-xl shadow-lg overflow-hidden z-10 min-w-[180px]">
+                      <button onClick={() => handleJoin('member')} className="w-full text-left px-4 py-3 hover:bg-[#FFF8F0] text-sm font-semibold">
+                        以會員身份加入
+                      </button>
+                      <button onClick={() => handleJoin('coach')} className="w-full text-left px-4 py-3 hover:bg-[#FFF8F0] text-sm font-semibold border-t border-[#1A1A1A]/5">
+                        以教練身份申請
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : membership.status === 'pending' ? (
                 <span className="bg-amber-500/20 text-amber-200 px-4 py-2 rounded-full text-sm font-semibold">
                   申請審批中

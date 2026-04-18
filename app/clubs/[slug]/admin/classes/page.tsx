@@ -199,14 +199,22 @@ export default function ClubAdminClassesPage() {
                   : (
                     <div className="space-y-2">
                       {participants.map(p => (
-                        <div key={p.booking_id || p.id} className="flex items-center justify-between bg-[#FFF8F0] p-3 rounded-lg">
-                          <div className="flex-1">
+                        <div key={p.booking_id || p.id} className="flex items-center justify-between bg-[#FFF8F0] p-3 rounded-lg gap-3">
+                          <div className="flex-1 min-w-0">
                             <span className="text-sm font-bold text-[#1A1A1A]">{p.name || '未設名稱'}</span>
                             <div className="flex gap-4 mt-1 text-xs text-[#1A1A1A]/50">
                               <span>📧 {p.email || '—'}</span><span>📱 {p.phone || '—'}</span>
                             </div>
                           </div>
-                          <button onClick={() => removeParticipant(p.booking_id || p.id, cls.id)} className="text-xs text-red-500 font-semibold ml-3">移除</button>
+                          <button onClick={async () => {
+                              const newAttended = !p.attended;
+                              await supabase.from('class_bookings').update({ attended: newAttended }).eq('id', p.booking_id || p.id);
+                              setParticipants(prev => prev.map(x => (x.booking_id || x.id) === (p.booking_id || p.id) ? { ...x, attended: newAttended } : x));
+                            }}
+                            className={`text-xs font-bold px-3 py-1.5 rounded-full ${p.attended ? 'bg-emerald-500 text-white' : 'bg-[#1A1A1A]/5 text-[#1A1A1A]/60'}`}>
+                            {p.attended ? '✓ 到齊' : '未到'}
+                          </button>
+                          <button onClick={() => removeParticipant(p.booking_id || p.id, cls.id)} className="text-xs text-red-500 font-semibold">移除</button>
                         </div>
                       ))}
                     </div>
