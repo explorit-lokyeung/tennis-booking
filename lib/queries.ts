@@ -85,7 +85,7 @@ export async function getAllClasses(): Promise<ClassWithClub[]> {
 export async function getAllCourts(): Promise<CourtWithClub[]> {
   const { data } = await supabase
     .from('courts')
-    .select('*, club:clubs!inner(id, slug, name, address, is_active)')
+    .select('*, club:clubs!inner(id, slug, name, address, settings, is_active)')
     .eq('club.is_active', true)
     .order('name');
   return (data as CourtWithClub[] | null)?.filter(c => c.club) ?? [];
