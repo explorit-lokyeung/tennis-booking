@@ -18,6 +18,7 @@ export interface BookingPolicy {
   advance_days_public: number;
   daily_limit: number;
   members_priority_hours: number;
+  advance_open_hour: number; // Hour (HKT) when the furthest day opens (e.g. 7 = 7:00 AM)
 }
 
 export const DEFAULT_POLICY: BookingPolicy = {
@@ -25,6 +26,7 @@ export const DEFAULT_POLICY: BookingPolicy = {
   advance_days_public: 7,
   daily_limit: 4,
   members_priority_hours: 0,
+  advance_open_hour: 0, // 0 = midnight (no restriction)
 };
 
 const POLICY_KEYS = [
@@ -32,6 +34,7 @@ const POLICY_KEYS = [
   'advance_days_public',
   'daily_limit',
   'members_priority_hours',
+  'advance_open_hour',
 ] as const;
 
 export async function getBookingPolicy(clubId: string): Promise<BookingPolicy> {
@@ -75,12 +78,17 @@ export function isWithinAdvanceWindow(
   policy: BookingPolicy
 ): boolean {
   const hk = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Hong_Kong' }));
+  const currentHour = hk.getHours();
   hk.setHours(0, 0, 0, 0);
   const [y, m, d] = dateStr.split('-').map(Number);
   const target = new Date(y, m - 1, d);
   const diffDays = Math.round((target.getTime() - hk.getTime()) / (1000 * 60 * 60 * 24));
   if (diffDays < 0) return false;
   const max = approved ? policy.advance_days : policy.advance_days_public;
+  // The furthest bookable day (max - 1) only opens at advance_open_hour
+  if (diffDays === max - 1 && policy.advance_open_hour > 0 && currentHour < policy.advance_open_hour) {
+    return false;
+  }
   return diffDays < max;
 }
 

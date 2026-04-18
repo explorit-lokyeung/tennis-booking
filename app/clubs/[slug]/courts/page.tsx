@@ -53,8 +53,13 @@ export default function ClubCourtsPage() {
   const advanceDays = approved ? policy.advance_days : policy.advance_days_public;
 
   const isViewOnly = (idx: number) => {
-    // Outside the user's bookable window = preview only.
-    return idx >= advanceDays;
+    if (idx >= advanceDays) return true;
+    // Furthest day locked until advance_open_hour
+    if (idx === advanceDays - 1 && policy.advance_open_hour > 0) {
+      const hkNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Hong_Kong' }));
+      if (hkNow.getHours() < policy.advance_open_hour) return true;
+    }
+    return false;
   };
 
   const dates = Array.from({ length: Math.max(advanceDays, 8) }, (_, i) => {

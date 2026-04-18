@@ -61,6 +61,7 @@ export default function ClubAdminSettingsPage() {
         <Field label="會員預約窗口" hint="會員可以預約未來幾日嘅時段（例如 14 = 今日加未來 13 日）" k="advance_days" min={1} max={60} />
         <Field label="公眾預約窗口" hint="未成為會員嘅用戶可以預約幾日之內嘅時段" k="advance_days_public" min={0} max={60} />
         <Field label="每日預約上限" hint="每個會員一日最多可以預約幾多個時段（0 = 冇限制）" k="daily_limit" min={0} max={12} />
+        <Field label="最遠日開放時間" hint="每日幾點（HKT）開放最遠嘅預約日（例如 7 = 朝早 7:00 開放，0 = 午夜即開）" k="advance_open_hour" min={0} max={23} />
         <Field label="會員優先時數" hint="新開放嘅時段會員可以搶先幾個鐘（未實作，將來用）" k="members_priority_hours" min={0} max={72} />
       </div>
     </div>
