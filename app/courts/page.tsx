@@ -52,7 +52,7 @@ export default function AllCourtsPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return courts.filter(c => {
+    return courts.filter((c: CourtWithClub) => {
       if (area !== 'all' && detectArea(c.club.address) !== area) return false;
       if (!q) return true;
       return (
@@ -63,6 +63,17 @@ export default function AllCourtsPage() {
       );
     });
   }, [courts, query, area]);
+
+  // Group filtered courts by club
+  const grouped = useMemo(() => {
+    const map = new Map<string, { club: CourtWithClub['club']; courts: CourtWithClub[] }>();
+    for (const c of filtered) {
+      const existing = map.get(c.club.id);
+      if (existing) { existing.courts.push(c); }
+      else { map.set(c.club.id, { club: c.club, courts: [c] }); }
+    }
+    return Array.from(map.values());
+  }, [filtered]);
 
   return (
     <main className="min-h-screen bg-[#FFF8F0] py-12 px-4">
@@ -129,46 +140,51 @@ export default function AllCourtsPage() {
             <p className="text-xl text-[#1A1A1A]/60">搵唔到符合條件嘅球場</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map(court => {
-              const areaKey = detectArea(court.club.address);
+          <div className="space-y-10">
+            {grouped.map(group => {
+              const areaKey = detectArea(group.club.address);
               const areaLabel = AREAS.find(a => a.key === areaKey)?.label;
               return (
-                <Link key={court.id} href={`/clubs/${court.club.slug}/courts`}
-                  className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center text-2xl">
-                      {court.indoor ? '🏟️' : '🎾'}
-                    </div>
+                <div key={group.club.id}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <Link href={`/clubs/${group.club.slug}`} className="text-lg font-bold text-[#1A1A1A] hover:text-[#C4A265] transition-colors">
+                      {group.club.name}
+                    </Link>
                     {areaLabel && (
                       <span className="text-[10px] px-2 py-1 rounded-full bg-[#C4A265]/10 text-[#C4A265] font-bold uppercase">{areaLabel}</span>
                     )}
-                  </div>
-                  <h3 className="text-xl font-bold text-[#1A1A1A] mb-2">{court.name}</h3>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-[#1A1A1A]/5 text-[#1A1A1A]/70 font-semibold">
-                      {surfaceLabel(court.surface)}
-                    </span>
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-[#1A1A1A]/5 text-[#1A1A1A]/70 font-semibold">
-                      {court.indoor ? '室內' : '室外'}
-                    </span>
-                    {court.hourly_rate > 0 && (
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold">
-                        ${court.hourly_rate}/小時
-                      </span>
+                    {group.club.address && (
+                      <span className="text-xs text-[#1A1A1A]/50 hidden sm:inline">{group.club.address}</span>
                     )}
                   </div>
-                  <div className="text-sm text-[#1A1A1A]/70 mb-2">🎾 {court.club.name}</div>
-                  {court.club.address && (
-                    <p className="text-xs text-[#1A1A1A]/50 mb-1">📍 {court.club.address}</p>
-                  )}
-                  {court.description && (
-                    <p className="text-xs text-[#1A1A1A]/60 line-clamp-2 mt-2">{court.description}</p>
-                  )}
-                  <div className="mt-auto pt-3 text-xs font-bold text-[#C4A265] uppercase tracking-wide">
-                    預約球場 →
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {group.courts.map(court => (
+                      <Link key={court.id} href={`/clubs/${court.club.slug}/courts`}
+                        className="bg-white rounded-2xl shadow-sm p-5 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col">
+                        <h3 className="text-lg font-bold text-[#1A1A1A] mb-2">{court.name}</h3>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-[#1A1A1A]/5 text-[#1A1A1A]/70 font-semibold">
+                            {surfaceLabel(court.surface)}
+                          </span>
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-[#1A1A1A]/5 text-[#1A1A1A]/70 font-semibold">
+                            {court.indoor ? '室內' : '室外'}
+                          </span>
+                          {court.hourly_rate > 0 && (
+                            <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold">
+                              ${court.hourly_rate}/小時
+                            </span>
+                          )}
+                        </div>
+                        {court.description && (
+                          <p className="text-xs text-[#1A1A1A]/60 line-clamp-2">{court.description}</p>
+                        )}
+                        <div className="mt-auto pt-3 text-xs font-bold text-[#C4A265] uppercase tracking-wide">
+                          預約球場 →
+                        </div>
+                      </Link>
+                    ))}
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
