@@ -162,7 +162,20 @@ export default function ClubForm({ initial, mode }: { initial: ClubFormValue; mo
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-semibold text-[#1A1A1A]/70 mb-1">地址</label>
-            <input type="text" value={form.address} onChange={e => update('address', e.target.value)} className={inputCls} />
+            <input type="text" value={form.address} onChange={e => update('address', e.target.value)}
+              onBlur={async (e) => {
+                const addr = e.target.value.trim();
+                if (!addr) return;
+                try {
+                  const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`, { headers: { 'Accept-Language': 'zh-HK,en' } });
+                  const data = await res.json();
+                  if (data?.[0]) {
+                    updateSetting('lat', parseFloat(data[0].lat).toFixed(4));
+                    updateSetting('lng', parseFloat(data[0].lon).toFixed(4));
+                  }
+                } catch {}
+              }}
+              className={inputCls} placeholder="填完地址後自動拉坐標" />
           </div>
           <div>
             <label className="block text-sm font-semibold text-[#1A1A1A]/70 mb-1">電話</label>
@@ -209,14 +222,14 @@ export default function ClubForm({ initial, mode }: { initial: ClubFormValue; mo
           </div>
           <div />
           <div>
-            <label className="block text-sm font-semibold text-[#1A1A1A]/70 mb-1">緯度 (lat)</label>
+            <label className="block text-sm font-semibold text-[#1A1A1A]/70 mb-1">緯度 <span className="font-normal text-[#1A1A1A]/40">(自動填寫)</span></label>
             <input type="text" inputMode="decimal" value={form.settings.lat || ''}
-              onChange={e => updateSetting('lat', e.target.value)} placeholder="22.2783" className={inputCls} />
+              onChange={e => updateSetting('lat', e.target.value)} placeholder="填完地址後自動生成" className={inputCls + ' bg-[#FFF8F0]'} readOnly />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-[#1A1A1A]/70 mb-1">經度 (lng)</label>
+            <label className="block text-sm font-semibold text-[#1A1A1A]/70 mb-1">經度 <span className="font-normal text-[#1A1A1A]/40">(自動填寫)</span></label>
             <input type="text" inputMode="decimal" value={form.settings.lng || ''}
-              onChange={e => updateSetting('lng', e.target.value)} placeholder="114.1747" className={inputCls} />
+              onChange={e => updateSetting('lng', e.target.value)} placeholder="填完地址後自動生成" className={inputCls + ' bg-[#FFF8F0]'} readOnly />
           </div>
           <label className="flex items-center gap-3 md:col-span-2 mt-2">
             <input type="checkbox" checked={form.is_active} onChange={e => update('is_active', e.target.checked)} className="w-4 h-4" />
