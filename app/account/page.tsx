@@ -295,38 +295,7 @@ export default function AccountPage() {
           </Link>
         )}
 
-        <h2 className="text-lg font-bold text-[#1A1A1A] mb-3">我的球會 ({approved.length})</h2>
-        <div className="grid sm:grid-cols-2 gap-3 mb-4">
-          {approved.length === 0 ? (
-            <p className="text-[#1A1A1A]/40 text-sm">暫未加入任何球會 · <Link href="/clubs" className="text-[#C4A265] font-semibold">瀏覽球會 →</Link></p>
-          ) : approved.map(m => (
-            <Link key={m.id} href={`/clubs/${m.clubs?.slug}`}
-              className="block bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-[#1A1A1A]">{m.clubs?.name}</p>
-                  <p className="text-xs text-[#1A1A1A]/50 mt-0.5">
-                    {m.role === 'owner' ? '東主' : m.role === 'admin' ? '管理員' : m.role === 'coach' ? '教練' : '會員'}
-                  </p>
-                </div>
-                <span className="text-xs text-[#C4A265] font-semibold">查看 →</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {pending.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-sm font-bold text-[#1A1A1A]/60 mb-2">審批中</h3>
-            {pending.map(m => (
-              <div key={m.id} className="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">
-                {m.clubs?.name} — 申請審批中
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-10 mb-4 flex items-center justify-between flex-wrap gap-3">
+        <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-lg font-bold text-[#1A1A1A]">我的預約日曆</h2>
             <p className="text-xs text-[#1A1A1A]/50 mt-1">本週 {totalEventsThisWeek} 項 · 球場 + 課堂</p>
@@ -456,6 +425,37 @@ export default function AccountPage() {
             <p className="text-center text-[#1A1A1A]/40 text-sm mt-6">本週暫無預約</p>
           )}
         </div>
+
+        <h2 className="text-lg font-bold text-[#1A1A1A] mb-3 mt-10">我的球會 ({approved.length})</h2>
+        <div className="grid sm:grid-cols-2 gap-3 mb-4">
+          {approved.length === 0 ? (
+            <p className="text-[#1A1A1A]/40 text-sm">暫未加入任何球會 · <Link href="/clubs" className="text-[#C4A265] font-semibold">瀏覽球會 →</Link></p>
+          ) : approved.map(m => (
+            <Link key={m.id} href={`/clubs/${m.clubs?.slug}`}
+              className="block bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-[#1A1A1A]">{m.clubs?.name}</p>
+                  <p className="text-xs text-[#1A1A1A]/50 mt-0.5">
+                    {m.role === 'owner' ? '東主' : m.role === 'admin' ? '管理員' : m.role === 'coach' ? '教練' : '會員'}
+                  </p>
+                </div>
+                <span className="text-xs text-[#C4A265] font-semibold">查看 →</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {pending.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-sm font-bold text-[#1A1A1A]/60 mb-2">審批中</h3>
+            {pending.map(m => (
+              <div key={m.id} className="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">
+                {m.clubs?.name} — 申請審批中
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex gap-3">
           <Link href="/clubs" className="flex-1 text-center bg-[#1A1A1A] text-[#FFF8F0] py-3 rounded-full font-bold uppercase tracking-wider text-sm hover:bg-[#1A1A1A]/80 transition-all">
