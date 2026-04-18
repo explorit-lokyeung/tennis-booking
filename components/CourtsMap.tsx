@@ -3,7 +3,7 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import Link from 'next/link';
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import type { CourtWithClub } from '@/lib/queries';
 import 'leaflet/dist/leaflet.css';
 
@@ -35,9 +35,21 @@ function getLatLng(club: CourtWithClub['club']): [number, number] | null {
 
 function FlyTo({ target }: { target: [number, number] | null }) {
   const map = useMap();
-  React.useEffect(() => {
-    if (target) map.flyTo(target, 14, { duration: 0.8 });
+  useEffect(() => {
+    if (target) {
+      try { map.flyTo(target, 14, { duration: 0.8 }); } catch {}
+    }
   }, [target, map]);
+  return null;
+}
+
+// Invalidate map size when container resizes (fixes grey tiles)
+function InvalidateSize() {
+  const map = useMap();
+  useEffect(() => {
+    const t = setTimeout(() => map.invalidateSize(), 200);
+    return () => clearTimeout(t);
+  }, [map]);
   return null;
 }
 
@@ -70,41 +82,38 @@ export default function CourtsMap({ courts, showSidebar = false }: Props) {
     setTimeout(() => setFlyTarget(null), 1000);
   }, []);
 
-  const clubListItems = groups.map(g => (
-    <button
-      key={g.club.id}
-      onClick={() => handleClubClick(g)}
-      className={`w-full text-left p-3 hover:bg-[#FFF8F0] transition-colors ${
-        activeClub === g.club.id ? 'bg-[#C4A265]/10 border-l-2 border-[#C4A265]' : ''
-      }`}
-    >
-      <p className="font-bold text-sm text-[#1A1A1A] leading-tight">{g.club.name}</p>
-      {g.club.address && <p className="text-[11px] text-[#1A1A1A]/50 mt-0.5 leading-tight">{g.club.address}</p>}
-      <p className="text-[11px] text-[#C4A265] font-semibold mt-1">{g.courts.length} 個球場</p>
-    </button>
-  ));
+  const clubList = (
+    <div className="divide-y divide-[#1A1A1A]/5">
+      {groups.map(g => (
+        <button
+          key={g.club.id}
+          onClick={() => handleClubClick(g)}
+          className={`w-full text-left p-3 hover:bg-[#FFF8F0] transition-colors ${
+            activeClub === g.club.id ? 'bg-[#C4A265]/10 border-l-2 border-[#C4A265]' : ''
+          }`}
+        >
+          <p className="font-bold text-sm text-[#1A1A1A] leading-tight">{g.club.name}</p>
+          {g.club.address && <p className="text-[11px] text-[#1A1A1A]/50 mt-0.5 leading-tight">{g.club.address}</p>}
+          <p className="text-[11px] text-[#C4A265] font-semibold mt-1">{g.courts.length} 個球場</p>
+        </button>
+      ))}
+    </div>
+  );
 
-  const mapElement = (
-    <MapContainer
-      center={bounds ? undefined : HK_CENTER}
-      zoom={bounds ? undefined : 11}
-      bounds={bounds}
-      boundsOptions={{ padding: [40, 40] }}
-      style={{ width: '100%', height: '100%' }}
-      scrollWheelZoom
-    >
+  // Single map — never duplicate MapContainer
+  const theMap = (
+    <MapContainer center={bounds ? undefined : HK_CENTER} zoom={bounds ? undefined : 11}
+      bounds={bounds} boundsOptions={{ padding: [40, 40] }} style={{ width: '100%', height: '100%' }} scrollWheelZoom>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <FlyTo target={flyTarget} />
+      <InvalidateSize />
       {groups.map(g => (
-        <Marker
-          key={g.club.id}
-          position={g.latlng}
+        <Marker key={g.club.id} position={g.latlng}
           icon={activeClub === g.club.id ? activeIcon : markerIcon}
-          eventHandlers={{ click: () => setActiveClub(g.club.id) }}
-        >
+          eventHandlers={{ click: () => setActiveClub(g.club.id) }}>
           <Popup>
             <div className="min-w-[180px]">
               <p className="font-bold text-[#1A1A1A] text-base mb-1">{g.club.name}</p>
@@ -113,7 +122,7 @@ export default function CourtsMap({ courts, showSidebar = false }: Props) {
                 {g.courts.slice(0, 5).map(c => (
                   <li key={c.id}>• {c.name} <span className="text-[#1A1A1A]/50">({c.surface}{c.indoor ? ' · 室內' : ' · 室外'})</span></li>
                 ))}
-                {g.courts.length > 5 && <li className="text-[#1A1A1A]/50">⋯ 還有 {g.courts.length - 5} 個場</li>}
+                {g.courts.length > 5 && <li className="text-[#1A1A1A]/50">... 還有 {g.courts.length - 5} 個場</li>}
               </ul>
               <Link href={`/clubs/${g.club.slug}`} className="text-[#C4A265] font-bold text-xs uppercase tracking-wide hover:underline">
                 查看球會 →
@@ -126,55 +135,38 @@ export default function CourtsMap({ courts, showSidebar = false }: Props) {
   );
 
   if (!showSidebar) {
-    return <div className="w-full h-[50vh] rounded-2xl overflow-hidden shadow-sm">{mapElement}</div>;
+    return <div className="w-full h-[50vh] rounded-2xl overflow-hidden shadow-sm">{theMap}</div>;
   }
 
   return (
-    <div className="w-full rounded-2xl overflow-hidden shadow-sm relative">
-      {/* Desktop: side-by-side */}
-      <div className="hidden md:flex h-[70vh]">
-        <div className="w-72 flex-shrink-0 bg-white overflow-y-auto border-r border-[#1A1A1A]/10">
-          <div className="p-3 border-b border-[#1A1A1A]/10">
-            <p className="text-xs font-bold text-[#1A1A1A]/50 uppercase tracking-wider">{groups.length} 個球會</p>
-          </div>
-          <div className="divide-y divide-[#1A1A1A]/5">{clubListItems}</div>
+    <div className="w-full rounded-2xl overflow-hidden shadow-sm relative flex flex-col md:flex-row" style={{ height: '70vh' }}>
+      {/* Sidebar — left on desktop, hidden on mobile (drawer instead) */}
+      <div className="hidden md:block w-72 flex-shrink-0 bg-white overflow-y-auto border-r border-[#1A1A1A]/10">
+        <div className="p-3 border-b border-[#1A1A1A]/10">
+          <p className="text-xs font-bold text-[#1A1A1A]/50 uppercase tracking-wider">{groups.length} 個球會</p>
         </div>
-        <div className="flex-1">{mapElement}</div>
+        {clubList}
       </div>
 
-      {/* Mobile: map full + bottom drawer */}
-      <div className="md:hidden relative h-[60vh]">
-        <div className="w-full h-full">{mapElement}</div>
+      {/* Map — single instance */}
+      <div className="flex-1 relative">
+        {theMap}
 
-        {/* Toggle button */}
-        <button
-          onClick={() => setDrawerOpen(!drawerOpen)}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] bg-white shadow-lg rounded-full px-4 py-2 text-sm font-bold text-[#1A1A1A] flex items-center gap-2"
-        >
-          <span className="text-sm font-bold">⌖</span>
+        {/* Mobile drawer toggle */}
+        <button onClick={() => setDrawerOpen(!drawerOpen)}
+          className="md:hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] bg-white shadow-lg rounded-full px-4 py-2 text-sm font-bold text-[#1A1A1A] flex items-center gap-2">
           <span>{groups.length} 個球會</span>
           <span className="text-[#1A1A1A]/40">{drawerOpen ? '▼' : '▲'}</span>
         </button>
 
-        {/* Bottom drawer */}
-        <div
-          className={`absolute bottom-0 left-0 right-0 z-[999] bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out ${
-            drawerOpen ? 'translate-y-0' : 'translate-y-full'
-          }`}
-          style={{ maxHeight: '50vh' }}
-        >
-          <div className="flex justify-center pt-2 pb-1">
-            <div className="w-10 h-1 bg-[#1A1A1A]/20 rounded-full" />
-          </div>
-          <div className="overflow-y-auto" style={{ maxHeight: 'calc(50vh - 20px)' }}>
-            <div className="divide-y divide-[#1A1A1A]/5">{clubListItems}</div>
-          </div>
+        {/* Mobile bottom drawer */}
+        <div className={`md:hidden absolute bottom-0 left-0 right-0 z-[999] bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out ${
+          drawerOpen ? 'translate-y-0' : 'translate-y-full'}`} style={{ maxHeight: '50vh' }}>
+          <div className="flex justify-center pt-2 pb-1"><div className="w-10 h-1 bg-[#1A1A1A]/20 rounded-full" /></div>
+          <div className="overflow-y-auto" style={{ maxHeight: 'calc(50vh - 20px)' }}>{clubList}</div>
         </div>
 
-        {/* Backdrop */}
-        {drawerOpen && (
-          <div className="absolute inset-0 z-[998] bg-black/20" onClick={() => setDrawerOpen(false)} />
-        )}
+        {drawerOpen && <div className="md:hidden absolute inset-0 z-[998] bg-black/20" onClick={() => setDrawerOpen(false)} />}
       </div>
     </div>
   );
