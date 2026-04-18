@@ -31,8 +31,8 @@
 ## 🔜 Todo
 
 ### Phase 4: Club Admin & Membership (P0)
-- [ ] T11: Club admin dashboard refactor (scoped to club_id)
-- [ ] T12: Member management UI (list, approve, reject, suspend, roles)
+- [ ] T11: Club admin dashboard refactor (scoped to club_id) — UI done in T08; needs DB RLS wiring after T05
+- [ ] T12: Member management UI (list, approve, reject, suspend, roles) — UI done in T08; needs DB RLS wiring after T05
 
 ---
 
@@ -48,16 +48,14 @@
 - [ ] T05: Rewrite RLS policies per club (view, book, admin, coach)
 - [ ] T06: Replace `profiles.is_admin` with `club_memberships.role` checks
 
-### Phase 3: Routing & Pages (P0)
-- [ ] T08: New URL structure — `/clubs/[slug]/courts`, `/clubs/[slug]/classes`, etc.
-- [ ] T09: Club profile/homepage (`/clubs/[slug]`)
-- [ ] T10: Refactor booking UI to be club-scoped
-
 ---
 
 ## ✅ Done
 
 - [x] T07: Vercel deployment setup — removed `output:'export'`, `basePath:'/tennis-booking'`, `trailingSlash` from `next.config.ts`; scrubbed `/tennis-booking` paths from `sw.js`, `manifest.json`, `MobileNav`, `ClassDetailClient`, `layout.tsx`
+- [x] T08: New URL structure — `/` platform landing, `/clubs` directory, `/clubs/[slug]` homepage, `/clubs/[slug]/courts`, `/clubs/[slug]/classes`, `/clubs/[slug]/classes/[id]`, `/clubs/[slug]/admin/*`, `/account` cross-club. Removed legacy `/courts`, `/classes`, `/admin` routes. `lib/types.ts` + `lib/club.ts` helpers added.
+- [x] T09: Club homepage `/clubs/[slug]` — hero with join-flow, courts preview, classes preview with visibility badges (公開／會員／私人), contact info, admin quick link.
+- [x] T10: Booking UI refactored to be club-scoped — courts/classes pages filter by `club_id`, visibility gate applied (members-only content hidden for non-approved users), inserted rows carry `club_id`, account dashboard shows cross-club memberships + bookings.
 
 ---
 

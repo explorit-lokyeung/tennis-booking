@@ -7,24 +7,18 @@ import { useToast } from '@/components/Toast';
 import SuccessAnimation from '@/components/SuccessAnimation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
+import { useClub, useMembership, isApprovedMember } from '@/lib/club';
+import type { TennisClass, Visibility } from '@/lib/types';
 
-interface TennisClass {
-  id: string;
-  name: string;
-  coach: string;
-  level: string;
-  day: string;
-  time: string;
-  location: string;
-  spots_available: number;
-  spots_total: number;
-  price: number;
-  description: string;
-}
-
-export default function ClassDetailClient() {
+export default function ClubClassDetailPage() {
   const params = useParams();
+  const slug = params?.slug as string;
   const id = params?.id as string;
+  const { user } = useAuth();
+  const { club, loading: clubLoading } = useClub(slug);
+  const { membership } = useMembership(club?.id, user?.id);
+  const approved = isApprovedMember(membership);
+
   const [cls, setCls] = useState<TennisClass | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
@@ -32,37 +26,42 @@ export default function ClassDetailClient() {
   const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState('');
-  const { user } = useAuth();
   const { toast } = useToast();
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
-    supabase.from('classes').select('*').eq('id', id).single().then(({ data }) => {
-      if (data) setCls(data);
+    if (!id || !club) return;
+    supabase.from('classes').select('*').eq('id', id).eq('club_id', club.id).single().then(({ data }) => {
+      if (data) setCls(data as TennisClass);
       setLoading(false);
     });
-    // Check if already enrolled
     if (user) {
       supabase.from('class_bookings').select('id').eq('class_id', id).eq('user_id', user.id).then(({ data }) => {
         if (data && data.length > 0) { setEnrolled(true); setEnrollmentId(data[0].id); }
       });
     }
-  }, [id, user]);
+  }, [id, user, club]);
 
   const handleEnroll = async () => {
     if (!user) { window.location.href = '/login'; return; }
-    if (!cls) return;
+    if (!cls || !club) return;
+    const viz = (cls.visibility || 'public') as Visibility;
+    if (viz === 'members' && !approved) { setError('此課程只限會員報名，請先申請加入球會。'); return; }
+    if (viz === 'private') { setError('此課程為私人課程。'); return; }
+
     setEnrolling(true);
     setError('');
 
     if (cls.spots_available <= 0) { setError('名額已滿'); setEnrolling(false); return; }
 
     const { error: insertErr } = await supabase.from('class_bookings').insert({
-      class_id: cls.id, user_id: user.id, status: 'confirmed'
+      class_id: cls.id, club_id: club.id, user_id: user.id, status: 'confirmed',
     });
-    if (insertErr) { setError(insertErr.message.includes('duplicate') ? '你已報名此課程' : '報名失敗'); setEnrolling(false); return; }
-
+    if (insertErr) {
+      setError(insertErr.message.includes('duplicate') ? '你已報名此課程' : '報名失敗');
+      setEnrolling(false);
+      return;
+    }
     await supabase.from('classes').update({ spots_available: cls.spots_available - 1 }).eq('id', cls.id);
     setCls({ ...cls, spots_available: cls.spots_available - 1 });
     setEnrolled(true);
@@ -85,30 +84,30 @@ export default function ClassDetailClient() {
     toast('已取消報名');
   };
 
-  if (loading) return <div className="min-h-screen bg-[#FFF8F0]" />;
-  if (!cls) return (
+  if (loading || clubLoading) return <div className="min-h-screen bg-[#FFF8F0]" />;
+  if (!cls || !club) return (
     <div className="min-h-screen flex items-center justify-center bg-[#FFF8F0]">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-[#1A1A1A] mb-4">找不到課程</h1>
-        <Link href="/classes/" className="text-[#C4A265] font-semibold">返回課程列表</Link>
+        <Link href={`/clubs/${slug}/classes`} className="text-[#C4A265] font-semibold">返回課程列表</Link>
       </div>
     </div>
   );
 
   const initials = cls.coach.replace('Coach ', '').split(' ').map(n => n[0]).join('');
   const levelMap: Record<string, { label: string; color: string; desc: string }> = {
-    'Beginner': { label: 'BEGINNER', color: 'bg-emerald-500', desc: '適合初學者' },
-    'Intermediate': { label: 'INTERMEDIATE', color: 'bg-amber-500', desc: '適合有基礎嘅球員' },
-    'Advanced': { label: 'ADVANCED', color: 'bg-red-500', desc: '適合進階球員' },
+    Beginner: { label: 'BEGINNER', color: 'bg-emerald-500', desc: '適合初學者' },
+    Intermediate: { label: 'INTERMEDIATE', color: 'bg-amber-500', desc: '適合有基礎嘅球員' },
+    Advanced: { label: 'ADVANCED', color: 'bg-red-500', desc: '適合進階球員' },
   };
-  const lv = levelMap[cls.level] || levelMap['Beginner'];
+  const lv = levelMap[cls.level] || levelMap.Beginner;
   const spotsPercent = ((cls.spots_total - cls.spots_available) / cls.spots_total) * 100;
 
   return (
     <>{showSuccess && <SuccessAnimation message="報名成功！" />}
     <main className="min-h-screen bg-[#FFF8F0] py-12 px-4">
       <div className="max-w-3xl mx-auto">
-        <Link href="/classes/" className="inline-flex items-center gap-1 text-[#1A1A1A]/60 hover:text-[#1A1A1A] mb-6 text-sm">
+        <Link href={`/clubs/${slug}/classes`} className="inline-flex items-center gap-1 text-[#1A1A1A]/60 hover:text-[#1A1A1A] mb-6 text-sm">
           ‹ 返回課程列表
         </Link>
 
@@ -117,6 +116,7 @@ export default function ClassDetailClient() {
             <div>
               <span className={`${lv.color} text-white text-xs px-3 py-1 rounded-full font-bold uppercase`}>{lv.label}</span>
               <h1 className="text-3xl font-bold text-[#1A1A1A] mt-3">{cls.name}</h1>
+              <p className="text-sm text-[#1A1A1A]/40 mt-1">{club.name}</p>
             </div>
             <div className="text-right">
               <span className="text-3xl font-bold text-[#C4A265]">${cls.price}</span>
@@ -132,10 +132,7 @@ export default function ClassDetailClient() {
               <p className="text-xs text-[#1A1A1A]/40 mb-2">教練</p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#C4A265] flex items-center justify-center text-white font-bold text-sm">{initials}</div>
-                <div>
-                  <p className="font-semibold text-[#1A1A1A]">{cls.coach}</p>
-                  <p className="text-xs text-[#1A1A1A]/40">專業教練</p>
-                </div>
+                <div><p className="font-semibold text-[#1A1A1A]">{cls.coach}</p><p className="text-xs text-[#1A1A1A]/40">專業教練</p></div>
               </div>
             </div>
             <div>
@@ -163,9 +160,7 @@ export default function ClassDetailClient() {
 
           {enrolled ? (
             <div className="space-y-3">
-              <div className="bg-emerald-50 text-emerald-700 py-4 rounded-2xl text-center font-bold animate-bounce-in">
-                ✅ 你已報名此課程
-              </div>
+              <div className="bg-emerald-50 text-emerald-700 py-4 rounded-2xl text-center font-bold animate-bounce-in">✅ 你已報名此課程</div>
               <button onClick={handleCancel} disabled={cancelling}
                 className="w-full border-2 border-red-300 text-red-500 py-3 rounded-2xl font-semibold hover:bg-red-50 transition-all disabled:opacity-50">
                 {cancelling ? '取消中...' : '取消報名'}
