@@ -30,12 +30,6 @@
 
 ## 🔜 Todo
 
-### Phase 3: Routing & Pages (P0)
-- [ ] T07: Vercel deployment setup (replace GitHub Pages static export)
-- [ ] T08: New URL structure — `/clubs/[slug]/courts`, `/clubs/[slug]/classes`, etc.
-- [ ] T09: Club profile/homepage (`/clubs/[slug]`)
-- [ ] T10: Refactor booking UI to be club-scoped
-
 ### Phase 4: Club Admin & Membership (P0)
 - [ ] T11: Club admin dashboard refactor (scoped to club_id)
 - [ ] T12: Member management UI (list, approve, reject, suspend, roles)
@@ -54,11 +48,16 @@
 - [ ] T05: Rewrite RLS policies per club (view, book, admin, coach)
 - [ ] T06: Replace `profiles.is_admin` with `club_memberships.role` checks
 
+### Phase 3: Routing & Pages (P0)
+- [ ] T08: New URL structure — `/clubs/[slug]/courts`, `/clubs/[slug]/classes`, etc.
+- [ ] T09: Club profile/homepage (`/clubs/[slug]`)
+- [ ] T10: Refactor booking UI to be club-scoped
+
 ---
 
 ## ✅ Done
 
-_(nothing yet)_
+- [x] T07: Vercel deployment setup — removed `output:'export'`, `basePath:'/tennis-booking'`, `trailingSlash` from `next.config.ts`; scrubbed `/tennis-booking` paths from `sw.js`, `manifest.json`, `MobileNav`, `ClassDetailClient`, `layout.tsx`
 
 ---
 

@@ -51,7 +51,7 @@ export default function ClassDetailClient() {
   }, [id, user]);
 
   const handleEnroll = async () => {
-    if (!user) { window.location.href = '/tennis-booking/login/'; return; }
+    if (!user) { window.location.href = '/login'; return; }
     if (!cls) return;
     setEnrolling(true);
     setError('');

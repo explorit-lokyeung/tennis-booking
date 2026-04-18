@@ -11,7 +11,7 @@ const links = [
 
 export default function MobileNav() {
   const pathname = usePathname();
-  const clean = pathname?.replace('/tennis-booking', '') || '/';
+  const clean = pathname || '/';
   if (clean.includes('/admin')) return null;
 
   return (

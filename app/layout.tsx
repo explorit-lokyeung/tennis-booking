@@ -43,7 +43,7 @@ export default function RootLayout({
         </AuthProvider>
               <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/tennis-booking/sw.js');
+            navigator.serviceWorker.register('/sw.js');
           }
         `}} />
       </body>
