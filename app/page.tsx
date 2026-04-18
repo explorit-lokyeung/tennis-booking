@@ -127,7 +127,7 @@ export default function PlatformLandingPage() {
             </Link>
           </div>
           {courts.length > 0 ? (
-            <CourtsMap courts={courts} />
+            <CourtsMap courts={courts} showSidebar />
           ) : (
             <div className="w-full h-[50vh] rounded-2xl bg-[#FFF8F0] flex items-center justify-center">
               <p className="text-[#1A1A1A]/40">載入中...</p>

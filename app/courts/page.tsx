@@ -127,7 +127,7 @@ export default function AllCourtsPage() {
           loading ? (
             <div className="w-full h-[70vh] rounded-2xl bg-white animate-pulse" />
           ) : (
-            <CourtsMap courts={filtered} />
+            <CourtsMap courts={filtered} showSidebar />
           )
         ) : loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
