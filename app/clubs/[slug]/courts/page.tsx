@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createPortal } from 'react-dom';
 import { useToast } from '@/components/Toast';
@@ -25,6 +25,8 @@ export default function ClubCourtsPage() {
   const params = useParams();
   const slug = params?.slug as string;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedCourt = searchParams?.get('court');
   const { user } = useAuth();
   const { club, loading: clubLoading } = useClub(slug);
   const { membership } = useMembership(club?.id, user?.id);
@@ -234,7 +236,7 @@ export default function ClubCourtsPage() {
                 <tr>
                   <th className="p-3 text-left text-sm font-bold text-[#1A1A1A]/60">時間</th>
                   {visibleCourts.map(c => (
-                    <th key={c.id} className="p-3 text-center text-sm font-bold text-[#1A1A1A]">
+                    <th key={c.id} className={`p-3 text-center text-sm font-bold ${preselectedCourt === c.id ? 'text-[#C4A265] bg-[#C4A265]/5' : 'text-[#1A1A1A]'}`}>
                       <div>{c.name}</div>
                       <div className="text-xs font-normal text-[#1A1A1A]/50">
                         {c.surface === 'Hard' ? '硬地' : c.surface === 'Clay' ? '泥地' : c.surface}

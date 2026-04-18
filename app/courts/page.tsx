@@ -159,7 +159,7 @@ export default function AllCourtsPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {group.courts.map(court => (
-                      <Link key={court.id} href={`/clubs/${court.club.slug}/courts`}
+                      <Link key={court.id} href={`/clubs/${court.club.slug}/courts?court=${court.id}`}
                         className="bg-white rounded-2xl shadow-sm p-5 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col">
                         <h3 className="text-lg font-bold text-[#1A1A1A] mb-2">{court.name}</h3>
                         <div className="flex flex-wrap gap-2 mb-3">
