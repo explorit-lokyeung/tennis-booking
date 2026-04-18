@@ -13,6 +13,7 @@ interface BookingRow {
   slot_id: string;
   date: string;
   hour: number;
+  status?: string;
   courts: { name: string; surface: string } | null;
   clubs?: { slug: string; name: string } | null;
 }
@@ -20,11 +21,79 @@ interface BookingRow {
 interface ClassBookingRow {
   id: string;
   club_id: string;
+  status?: string;
   classes: { id: string; name: string; coach: string; day: string; time: string; spots_available: number } | null;
   clubs?: { slug: string; name: string } | null;
 }
 
 type MembershipRow = ClubMembership & { clubs: Club | null };
+
+type CalendarEvent = {
+  kind: 'court' | 'class';
+  id: string;
+  title: string;
+  clubId: string;
+  clubName: string;
+  clubSlug: string;
+  time: string;
+  sortKey: number;
+  status: string;
+  raw: BookingRow | ClassBookingRow;
+};
+
+const DAY_NAME_TO_INDEX: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+};
+
+const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
+
+function startOfWeek(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const dayOfWeek = d.getDay();
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function addDays(date: Date, n: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function isoDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function parseClassStartMinutes(time: string): number {
+  const m = time.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+  if (!m) return 0;
+  let h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  const ampm = m[3]?.toUpperCase();
+  if (ampm === 'PM' && h < 12) h += 12;
+  if (ampm === 'AM' && h === 12) h = 0;
+  return h * 60 + min;
+}
+
+function fmtHour(h: number): string {
+  const display = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return `${display}:00 ${h >= 12 ? 'PM' : 'AM'}`;
+}
+
+function fmtWeekRange(start: Date): string {
+  const end = addDays(start, 6);
+  const sameMonth = start.getMonth() === end.getMonth();
+  const sMon = start.getMonth() + 1;
+  const eMon = end.getMonth() + 1;
+  return sameMonth
+    ? `${start.getFullYear()} 年 ${sMon} 月 ${start.getDate()} – ${end.getDate()} 日`
+    : `${sMon}/${start.getDate()} – ${eMon}/${end.getDate()}`;
+}
 
 export default function AccountPage() {
   const [user, setUser] = useState<any>(null);
@@ -33,7 +102,9 @@ export default function AccountPage() {
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [classBookings, setClassBookings] = useState<ClassBookingRow[]>([]);
   const [offline, setOffline] = useState(false);
-  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
+  const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
+  const [clubFilter, setClubFilter] = useState<string>('all');
+  const [selected, setSelected] = useState<CalendarEvent | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -60,17 +131,15 @@ export default function AccountPage() {
 
       const { data: bk } = await supabase
         .from('bookings')
-        .select('id, club_id, slot_id, date, hour, courts(name, surface), clubs(slug, name)')
+        .select('id, club_id, slot_id, date, hour, status, courts(name, surface), clubs(slug, name)')
         .eq('user_id', user.id)
-        .eq('status', 'confirmed')
         .order('date', { ascending: true });
       if (bk) setBookings(bk as any);
 
       const { data: cb } = await supabase
         .from('class_bookings')
-        .select('id, club_id, classes(id, name, coach, day, time, spots_available), clubs(slug, name)')
-        .eq('user_id', user.id)
-        .eq('status', 'confirmed');
+        .select('id, club_id, status, classes(id, name, coach, day, time, spots_available), clubs(slug, name)')
+        .eq('user_id', user.id);
       if (cb) setClassBookings(cb as any);
 
       setLoading(false);
@@ -88,6 +157,7 @@ export default function AccountPage() {
     await supabase.from('bookings').delete().eq('id', bookingId);
     await supabase.from('slots').delete().eq('id', slotId);
     setBookings(prev => prev.filter(b => b.id !== bookingId));
+    setSelected(null);
     toast('已取消預約');
   };
 
@@ -99,18 +169,74 @@ export default function AccountPage() {
       await supabase.from('classes').update({ spots_available: cls.classes.spots_available + 1 }).eq('id', classId);
     }
     setClassBookings(prev => prev.filter(cb => cb.id !== cbId));
+    setSelected(null);
     toast('已取消報名');
   };
 
-  const fmtHour = (h: number) => `${h > 12 ? h - 12 : h}:00 ${h >= 12 ? 'PM' : 'AM'}`;
+  const clubOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    bookings.forEach(b => { if (b.clubs) map.set(b.club_id, b.clubs.name); });
+    classBookings.forEach(cb => { if (cb.clubs) map.set(cb.club_id, cb.clubs.name); });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [bookings, classBookings]);
 
-  const { upcoming, past } = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return {
-      upcoming: bookings.filter(b => b.date >= today),
-      past: bookings.filter(b => b.date < today),
-    };
-  }, [bookings]);
+  const weekDates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>();
+    weekDates.forEach(d => map.set(isoDate(d), []));
+
+    const passesClubFilter = (clubId: string) => clubFilter === 'all' || clubFilter === clubId;
+
+    bookings.forEach(b => {
+      if (!passesClubFilter(b.club_id)) return;
+      const bucket = map.get(b.date);
+      if (!bucket) return;
+      bucket.push({
+        kind: 'court',
+        id: `court-${b.id}`,
+        title: b.courts?.name ?? '球場',
+        clubId: b.club_id,
+        clubName: b.clubs?.name ?? '',
+        clubSlug: b.clubs?.slug ?? '',
+        time: fmtHour(b.hour),
+        sortKey: b.hour * 60,
+        status: b.status ?? 'confirmed',
+        raw: b,
+      });
+    });
+
+    classBookings.forEach(cb => {
+      if (!cb.classes) return;
+      if (!passesClubFilter(cb.club_id)) return;
+      const dayIdx = DAY_NAME_TO_INDEX[cb.classes.day.toLowerCase()];
+      if (dayIdx === undefined) return;
+      const target = weekDates.find(d => d.getDay() === dayIdx);
+      if (!target) return;
+      const bucket = map.get(isoDate(target));
+      if (!bucket) return;
+      bucket.push({
+        kind: 'class',
+        id: `class-${cb.id}`,
+        title: cb.classes.name,
+        clubId: cb.club_id,
+        clubName: cb.clubs?.name ?? '',
+        clubSlug: cb.clubs?.slug ?? '',
+        time: cb.classes.time,
+        sortKey: parseClassStartMinutes(cb.classes.time),
+        status: cb.status ?? 'confirmed',
+        raw: cb,
+      });
+    });
+
+    map.forEach(list => list.sort((a, b) => a.sortKey - b.sortKey));
+    return map;
+  }, [bookings, classBookings, weekDates, clubFilter]);
+
+  const totalEventsThisWeek = useMemo(
+    () => Array.from(eventsByDate.values()).reduce((n, list) => n + list.length, 0),
+    [eventsByDate],
+  );
 
   if (loading) return <main className="min-h-screen bg-[#FFF8F0]" />;
 
@@ -118,7 +244,6 @@ export default function AccountPage() {
     return (
       <main className="min-h-screen bg-[#FFF8F0] flex items-center justify-center px-4">
         <div className="text-center">
-          <p className="text-5xl mb-4">🎾</p>
           <h2 className="text-2xl font-bold text-[#1A1A1A] mb-2">請先登入</h2>
           <p className="text-[#1A1A1A]/50 mb-6">查看你嘅球會同預約</p>
           <Link href="/login" className="inline-block bg-[#1A1A1A] text-[#FFF8F0] px-8 py-3 rounded-full font-bold uppercase tracking-wider text-sm hover:bg-[#1A1A1A]/80 transition-all">
@@ -133,13 +258,12 @@ export default function AccountPage() {
   const approved = memberships.filter(m => m.status === 'approved');
   const pending = memberships.filter(m => m.status === 'pending');
   const coachMemberships = approved.filter(m => m.role === 'coach');
-  const shown = tab === 'upcoming' ? upcoming : past;
-
   const icalUrl = `/api/ical?user_id=${user.id}`;
+  const todayIso = isoDate(new Date());
 
   return (
     <main className="min-h-screen bg-[#FFF8F0]">
-      <div className="max-w-3xl mx-auto px-4 py-12">
+      <div className="max-w-5xl mx-auto px-4 py-12">
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-[#C4A265] flex items-center justify-center text-white text-xl font-bold">
             {userName.charAt(0).toUpperCase()}
@@ -147,7 +271,7 @@ export default function AccountPage() {
           <div className="flex-1">
             {offline && (
               <div className="bg-amber-100 text-amber-800 px-4 py-2 rounded-xl text-sm text-center mb-4 font-semibold">
-                📡 離線模式 — 顯示上次緩存嘅預約資料
+                離線模式 — 顯示上次緩存嘅預約資料
               </div>
             )}
             <h1 className="text-xl font-bold text-[#1A1A1A]">{userName}</h1>
@@ -172,7 +296,7 @@ export default function AccountPage() {
         )}
 
         <h2 className="text-lg font-bold text-[#1A1A1A] mb-3">我的球會 ({approved.length})</h2>
-        <div className="space-y-3 mb-4">
+        <div className="grid sm:grid-cols-2 gap-3 mb-4">
           {approved.length === 0 ? (
             <p className="text-[#1A1A1A]/40 text-sm">暫未加入任何球會 · <Link href="/clubs" className="text-[#C4A265] font-semibold">瀏覽球會 →</Link></p>
           ) : approved.map(m => (
@@ -196,81 +320,233 @@ export default function AccountPage() {
             <h3 className="text-sm font-bold text-[#1A1A1A]/60 mb-2">審批中</h3>
             {pending.map(m => (
               <div key={m.id} className="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">
-                🕒 {m.clubs?.name} — 申請審批中
+                {m.clubs?.name} — 申請審批中
               </div>
             ))}
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-8 mb-3">
-          <h2 className="text-lg font-bold text-[#1A1A1A]">我的球場預約</h2>
-          {bookings.length > 0 && (
+        <div className="mt-10 mb-4 flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-[#1A1A1A]">我的預約日曆</h2>
+            <p className="text-xs text-[#1A1A1A]/50 mt-1">本週 {totalEventsThisWeek} 項 · 球場 + 課堂</p>
+          </div>
+          {(bookings.length > 0 || classBookings.length > 0) && (
             <a href={icalUrl} className="text-xs text-[#C4A265] font-semibold hover:underline" download="tennis-bookings.ics">
               匯出到日曆 (ical)
             </a>
           )}
         </div>
 
-        <div className="flex gap-2 mb-3">
-          {(['upcoming', 'past'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
-                tab === t ? 'bg-[#1A1A1A] text-[#FFF8F0]' : 'bg-white text-[#1A1A1A]/50'
-              }`}>
-              {t === 'upcoming' ? `未來 (${upcoming.length})` : `過去 (${past.length})`}
+        {clubOptions.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            <button
+              onClick={() => setClubFilter('all')}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
+                clubFilter === 'all'
+                  ? 'bg-[#1A1A1A] text-[#FFF8F0] border-[#1A1A1A]'
+                  : 'bg-white text-[#1A1A1A]/60 border-[#1A1A1A]/10 hover:border-[#C4A265]'
+              }`}
+            >
+              所有球會
             </button>
-          ))}
-        </div>
+            {clubOptions.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setClubFilter(c.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold tracking-wider transition-all border ${
+                  clubFilter === c.id
+                    ? 'bg-[#1A1A1A] text-[#FFF8F0] border-[#1A1A1A]'
+                    : 'bg-white text-[#1A1A1A]/60 border-[#1A1A1A]/10 hover:border-[#C4A265]'
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        )}
 
-        <div className="space-y-3 mb-8">
-          {shown.length === 0 ? (
-            <p className="text-[#1A1A1A]/40 text-sm">{tab === 'upcoming' ? '暫無預約' : '未有紀錄'}</p>
-          ) : shown.map(b => (
-            <div key={b.id} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-[#1A1A1A]">
-                  {b.courts?.name}
-                  {b.clubs?.slug && <Link href={`/clubs/${b.clubs.slug}`} className="text-xs text-[#C4A265] ml-2 hover:underline">{b.clubs.name}</Link>}
-                </p>
-                <p className="text-sm text-[#1A1A1A]/50">{b.date} · {fmtHour(b.hour)}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-semibold">已確認</span>
-                {tab === 'upcoming' && (
-                  <button onClick={() => cancelBooking(b.id, b.slot_id)} className="text-xs text-red-400 hover:text-red-600 font-semibold px-2 py-1 rounded-lg hover:bg-red-50">取消</button>
-                )}
-              </div>
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => setWeekStart(prev => addDays(prev, -7))}
+              className="w-9 h-9 rounded-full border border-[#1A1A1A]/10 hover:border-[#C4A265] text-[#1A1A1A] flex items-center justify-center transition-all"
+              aria-label="上一週"
+            >
+              ‹
+            </button>
+            <div className="text-center">
+              <p className="text-sm font-bold text-[#1A1A1A]">{fmtWeekRange(weekStart)}</p>
+              <button
+                onClick={() => setWeekStart(startOfWeek(new Date()))}
+                className="text-xs text-[#C4A265] font-semibold hover:underline mt-0.5"
+              >
+                返回本週
+              </button>
             </div>
-          ))}
-        </div>
+            <button
+              onClick={() => setWeekStart(prev => addDays(prev, 7))}
+              className="w-9 h-9 rounded-full border border-[#1A1A1A]/10 hover:border-[#C4A265] text-[#1A1A1A] flex items-center justify-center transition-all"
+              aria-label="下一週"
+            >
+              ›
+            </button>
+          </div>
 
-        <h2 className="text-lg font-bold text-[#1A1A1A] mb-3">我的課堂</h2>
-        <div className="space-y-3 mb-8">
-          {classBookings.length === 0 ? (
-            <p className="text-[#1A1A1A]/40 text-sm">暫無報名</p>
-          ) : classBookings.map(cb => (
-            <div key={cb.id} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-[#1A1A1A]">
-                  {cb.classes?.name}
-                  {cb.clubs?.slug && <Link href={`/clubs/${cb.clubs.slug}`} className="text-xs text-[#C4A265] ml-2 hover:underline">{cb.clubs.name}</Link>}
-                </p>
-                <p className="text-sm text-[#1A1A1A]/50">{cb.classes?.day} {cb.classes?.time} · {cb.classes?.coach}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs bg-[#C4A265]/10 text-[#C4A265] px-3 py-1 rounded-full font-semibold">已報名</span>
-                <button onClick={() => cancelClass(cb.id, cb.classes?.id || '')} className="text-xs text-red-400 hover:text-red-600 font-semibold px-2 py-1 rounded-lg hover:bg-red-50">取消</button>
-              </div>
-            </div>
-          ))}
+          <div className="flex items-center gap-4 mb-3 text-xs text-[#1A1A1A]/60">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-[#1A1A1A]" /> 球場
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-[#C4A265]" /> 課堂
+            </span>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+            {weekDates.map((d, idx) => {
+              const iso = isoDate(d);
+              const events = eventsByDate.get(iso) ?? [];
+              const isToday = iso === todayIso;
+              return (
+                <div
+                  key={iso}
+                  className={`min-h-[140px] rounded-xl border p-2 flex flex-col ${
+                    isToday ? 'border-[#C4A265] bg-[#C4A265]/5' : 'border-[#1A1A1A]/5 bg-[#FFF8F0]/40'
+                  }`}
+                >
+                  <div className="flex items-baseline justify-between mb-2">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${isToday ? 'text-[#C4A265]' : 'text-[#1A1A1A]/40'}`}>
+                      {WEEKDAY_LABELS[d.getDay()]}
+                    </span>
+                    <span className={`text-sm font-bold ${isToday ? 'text-[#C4A265]' : 'text-[#1A1A1A]'}`}>
+                      {d.getDate()}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {events.length === 0 ? (
+                      <span className="text-[10px] text-[#1A1A1A]/20">—</span>
+                    ) : events.map(ev => {
+                      const cancelled = ev.status === 'cancelled';
+                      const pending = ev.status === 'pending';
+                      const base = ev.kind === 'court' ? 'bg-[#1A1A1A] text-[#FFF8F0]' : 'bg-[#C4A265] text-white';
+                      const styled = cancelled
+                        ? 'bg-[#1A1A1A]/20 text-[#1A1A1A]/50 line-through'
+                        : pending
+                          ? ev.kind === 'court' ? 'bg-[#1A1A1A]/60 text-[#FFF8F0]' : 'bg-[#C4A265]/60 text-white'
+                          : base;
+                      return (
+                        <button
+                          key={ev.id}
+                          onClick={() => setSelected(ev)}
+                          className={`${styled} text-left rounded-md px-1.5 py-1 text-[10px] leading-tight hover:opacity-90 transition-opacity`}
+                        >
+                          <p className="font-bold truncate">{ev.title}</p>
+                          <p className="opacity-80 truncate">{ev.time}</p>
+                          {ev.clubName && <p className="opacity-60 truncate hidden sm:block">{ev.clubName}</p>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {totalEventsThisWeek === 0 && (
+            <p className="text-center text-[#1A1A1A]/40 text-sm mt-6">本週暫無預約</p>
+          )}
         </div>
 
         <div className="flex gap-3">
           <Link href="/clubs" className="flex-1 text-center bg-[#1A1A1A] text-[#FFF8F0] py-3 rounded-full font-bold uppercase tracking-wider text-sm hover:bg-[#1A1A1A]/80 transition-all">
             瀏覽球會
           </Link>
+          <Link href="/classes" className="flex-1 text-center bg-white border border-[#1A1A1A]/10 text-[#1A1A1A] py-3 rounded-full font-bold uppercase tracking-wider text-sm hover:border-[#C4A265] transition-all">
+            瀏覽課堂
+          </Link>
         </div>
       </div>
+
+      {selected && (
+        <div
+          className="fixed inset-0 bg-[#1A1A1A]/50 flex items-center justify-center px-4 z-50"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <span
+                className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded ${
+                  selected.kind === 'court' ? 'bg-[#1A1A1A] text-[#FFF8F0]' : 'bg-[#C4A265] text-white'
+                }`}
+              >
+                {selected.kind === 'court' ? '球場' : '課堂'}
+              </span>
+              <span
+                className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded ${
+                  selected.status === 'cancelled'
+                    ? 'bg-red-50 text-red-600'
+                    : selected.status === 'pending'
+                      ? 'bg-amber-50 text-amber-700'
+                      : 'bg-emerald-50 text-emerald-700'
+                }`}
+              >
+                {selected.status === 'cancelled' ? '已取消' : selected.status === 'pending' ? '待確認' : '已確認'}
+              </span>
+            </div>
+            <h3 className="text-xl font-bold text-[#1A1A1A] mb-1">{selected.title}</h3>
+            <p className="text-sm text-[#1A1A1A]/60 mb-1">{selected.time}</p>
+            {selected.clubName && (
+              <Link
+                href={`/clubs/${selected.clubSlug}`}
+                className="text-xs text-[#C4A265] font-semibold hover:underline"
+              >
+                {selected.clubName} →
+              </Link>
+            )}
+            {selected.kind === 'class' && (selected.raw as ClassBookingRow).classes && (
+              <p className="text-xs text-[#1A1A1A]/50 mt-2">教練 {(selected.raw as ClassBookingRow).classes!.coach}</p>
+            )}
+            {selected.kind === 'court' && (selected.raw as BookingRow).courts && (
+              <p className="text-xs text-[#1A1A1A]/50 mt-2">場地 {(selected.raw as BookingRow).courts!.surface}</p>
+            )}
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setSelected(null)}
+                className="flex-1 bg-[#FFF8F0] text-[#1A1A1A] py-2.5 rounded-full font-bold uppercase tracking-wider text-xs hover:bg-[#FFF8F0]/60 transition-all"
+              >
+                關閉
+              </button>
+              {selected.status !== 'cancelled' && (
+                selected.kind === 'court' ? (
+                  <button
+                    onClick={() => {
+                      const b = selected.raw as BookingRow;
+                      cancelBooking(b.id, b.slot_id);
+                    }}
+                    className="flex-1 bg-red-500 text-white py-2.5 rounded-full font-bold uppercase tracking-wider text-xs hover:bg-red-600 transition-all"
+                  >
+                    取消預約
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const cb = selected.raw as ClassBookingRow;
+                      cancelClass(cb.id, cb.classes?.id ?? '');
+                    }}
+                    className="flex-1 bg-red-500 text-white py-2.5 rounded-full font-bold uppercase tracking-wider text-xs hover:bg-red-600 transition-all"
+                  >
+                    取消報名
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
