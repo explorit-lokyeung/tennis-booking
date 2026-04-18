@@ -92,7 +92,7 @@ function fmtWeekRange(start: Date): string {
   const eMon = end.getMonth() + 1;
   return sameMonth
     ? `${start.getFullYear()} 年 ${sMon} 月 ${start.getDate()} – ${end.getDate()} 日`
-    : `${sMon}/${start.getDate()} – ${eMon}/${end.getDate()}`;
+    : `${start.getFullYear()} 年 ${sMon} 月 ${start.getDate()} 日 – ${eMon} 月 ${end.getDate()} 日`;
 }
 
 export default function AccountPage() {
