@@ -19,8 +19,9 @@ export default function ClubAdminLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (authLoading || clubLoading || mbLoading) return;
-    if (!club) return; // wait for club to load
+    if (!club) return;
     if (!user) { router.push('/login'); return; }
+    console.log('[admin-layout] user:', user.id, 'club:', club.id, 'membership:', membership, 'hasRole:', hasRole(membership, 'admin', 'owner'));
     if (!hasRole(membership, 'admin', 'owner')) { router.push(`/clubs/${slug}`); return; }
     setChecked(true);
   }, [authLoading, clubLoading, mbLoading, user, membership, slug, router, club]);
