@@ -98,7 +98,11 @@ export default function ClubCourtsPage() {
   const isSelected = (courtId: string, hour: number) =>
     selections.some((s) => s.courtId === courtId && s.hour === hour);
 
+  const canBook = !!user && approved;
+
   const handleSlotClick = (courtId: string, hour: number) => {
+    if (!user) { router.push('/login'); return; }
+    if (!approved) { setError('請先加入球會成為會員後才可預約。'); return; }
     if (isViewOnly(dateIdx)) return;
     if (dateIdx === 0 && hour <= currentHKHour) return;
     if (isSelected(courtId, hour)) {
@@ -201,6 +205,16 @@ export default function ClubCourtsPage() {
         </Link>
         <h1 className="text-4xl font-black tracking-tight text-[#1A1A1A] mb-2">球場預約</h1>
         <p className="text-[#1A1A1A]/60 mb-2">選擇日期，揀時段，預約球場。可選擇連續 1-2 個時段。</p>
+
+        {!canBook && (
+          <div className="bg-[#C4A265]/10 border border-[#C4A265]/30 rounded-xl px-4 py-3 mb-4 text-sm text-[#1A1A1A]/70">
+            {!user ? (
+              <>你當前為預覽模式。<Link href="/login" className="text-[#C4A265] font-bold hover:underline">登入</Link>並加入球會後即可預約。</>
+            ) : (
+              <>你當前為預覽模式。請先<Link href={`/clubs/${slug}`} className="text-[#C4A265] font-bold hover:underline">加入球會</Link>成為會員後才可預約。</>
+            )}
+          </div>
+        )}
         <div className="flex items-center gap-4 mb-8 text-xs">
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-50 border border-emerald-200"></span>可預約</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#C4A265]"></span>已選擇</span>
