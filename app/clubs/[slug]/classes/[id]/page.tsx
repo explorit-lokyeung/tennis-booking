@@ -160,7 +160,7 @@ export default function ClubClassDetailPage() {
 
           {enrolled ? (
             <div className="space-y-3">
-              <div className="bg-emerald-50 text-emerald-700 py-4 rounded-2xl text-center font-bold animate-bounce-in">✅ 你已報名此課程</div>
+              <div className="bg-emerald-50 text-emerald-700 py-4 rounded-2xl text-center font-bold animate-bounce-in">你已報名此課程</div>
               <button onClick={handleCancel} disabled={cancelling}
                 className="w-full border-2 border-red-300 text-red-500 py-3 rounded-2xl font-semibold hover:bg-red-50 transition-all disabled:opacity-50">
                 {cancelling ? '取消中...' : '取消報名'}

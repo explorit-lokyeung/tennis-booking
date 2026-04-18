@@ -30,7 +30,7 @@ export default function PlatformLandingPage() {
     <div className="min-h-screen bg-[#FFF8F0]">
       {/* Hero */}
       <section className="relative bg-gradient-to-br from-[#1A1A1A] to-[#3A3A3A] text-white py-24 px-4 overflow-hidden">
-        <div className="absolute top-10 right-10 text-8xl opacity-10 animate-bounce-in hidden md:block">🎾</div>
+        <div className="absolute top-10 right-10 text-8xl opacity-10 animate-bounce-in hidden md:block"></div>
         <div className="max-w-6xl mx-auto text-center relative">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
             網球<span className="text-[#C4A265]">平台</span>
@@ -46,7 +46,7 @@ export default function PlatformLandingPage() {
               🗺️ 球場地圖
             </Link>
             <Link href="/classes" className="border-2 border-white/40 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/10 transition-colors">
-              🎓 所有課程
+               所有課程
             </Link>
           </div>
         </div>
@@ -91,7 +91,7 @@ export default function PlatformLandingPage() {
             </div>
           ) : clubs.length === 0 ? (
             <div className="bg-white rounded-2xl p-12 text-center">
-              <p className="text-5xl mb-3">🎾</p>
+              <p className="text-5xl mb-3"></p>
               <p className="text-[#1A1A1A]/60">暫時未有球會</p>
             </div>
           ) : (
@@ -100,10 +100,10 @@ export default function PlatformLandingPage() {
                 <Link key={c.id} href={`/clubs/${c.slug}`}
                   className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                   <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mb-4 text-3xl">
-                    🎾
+                    
                   </div>
                   <h3 className="text-xl font-bold text-[#1A1A1A] mb-2">{c.name}</h3>
-                  {c.address && <p className="text-sm text-[#1A1A1A]/60 mb-3">📍 {c.address}</p>}
+                  {c.address && <p className="text-sm text-[#1A1A1A]/60 mb-3">{c.address}</p>}
                   {c.description && (
                     <p className="text-sm text-[#1A1A1A]/70 line-clamp-2">{c.description}</p>
                   )}
@@ -142,17 +142,17 @@ export default function PlatformLandingPage() {
           <h2 className="text-3xl md:text-4xl font-bold text-[#1A1A1A] text-center mb-12">點解揀我哋</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">🏟️</div>
+              <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl"></div>
               <h3 className="font-bold text-[#1A1A1A] text-lg mb-2">多個球會，一個帳戶</h3>
               <p className="text-sm text-[#1A1A1A]/60">一次登入，管理你喺唔同球會嘅會籍同預約。</p>
             </div>
             <div className="text-center">
-              <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">⚡</div>
+              <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl"></div>
               <h3 className="font-bold text-[#1A1A1A] text-lg mb-2">即時預約</h3>
               <p className="text-sm text-[#1A1A1A]/60">睇到可用時段即刻book，唔駛等電話通知。</p>
             </div>
             <div className="text-center">
-              <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">🎓</div>
+              <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl"></div>
               <h3 className="font-bold text-[#1A1A1A] text-lg mb-2">專業教練</h3>
               <p className="text-sm text-[#1A1A1A]/60">由初級到高級，搵到適合你嘅課程。</p>
             </div>

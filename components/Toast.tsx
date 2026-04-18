@@ -18,7 +18,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
   }, []);
 
-  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const icons = { success: '✓', error: '✗', info: 'i' };
   const colors = { success: 'bg-emerald-600', error: 'bg-red-600', info: 'bg-[#1A1A1A]' };
 
   return (

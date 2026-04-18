@@ -303,7 +303,7 @@ export default function AccountPage() {
             <h1 className="text-xl font-bold text-[#1A1A1A]">{userName}</h1>
             <p className="text-sm text-[#1A1A1A]/50">{user.email}</p>
             {user.user_metadata?.phone && (
-              <p className="text-xs text-[#1A1A1A]/40 mt-0.5">📱 {user.user_metadata.phone}</p>
+              <p className="text-xs text-[#1A1A1A]/40 mt-0.5">{user.user_metadata.phone}</p>
             )}
           </div>
           <div className="flex flex-col gap-1.5 items-end">

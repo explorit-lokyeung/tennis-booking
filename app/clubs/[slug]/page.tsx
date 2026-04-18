@@ -75,7 +75,7 @@ export default function ClubHomepage() {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mt-4">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold mb-3">{club.name}</h1>
-              {club.address && <p className="text-white/70">📍 {club.address}</p>}
+              {club.address && <p className="text-white/70">{club.address}</p>}
               {club.description && <p className="mt-4 text-white/80 max-w-2xl">{club.description}</p>}
             </div>
             <div className="flex flex-col items-start md:items-end gap-2">

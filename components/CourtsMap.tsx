@@ -3,7 +3,7 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import Link from 'next/link';
-import { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import type { CourtWithClub } from '@/lib/queries';
 import 'leaflet/dist/leaflet.css';
 
@@ -35,7 +35,9 @@ function getLatLng(club: CourtWithClub['club']): [number, number] | null {
 
 function FlyTo({ target }: { target: [number, number] | null }) {
   const map = useMap();
-  if (target) map.flyTo(target, 14, { duration: 0.8 });
+  React.useEffect(() => {
+    if (target) map.flyTo(target, 14, { duration: 0.8 });
+  }, [target, map]);
   return null;
 }
 
@@ -149,7 +151,7 @@ export default function CourtsMap({ courts, showSidebar = false }: Props) {
           onClick={() => setDrawerOpen(!drawerOpen)}
           className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] bg-white shadow-lg rounded-full px-4 py-2 text-sm font-bold text-[#1A1A1A] flex items-center gap-2"
         >
-          <span>📍</span>
+          <span className="text-sm font-bold">⌖</span>
           <span>{groups.length} 個球會</span>
           <span className="text-[#1A1A1A]/40">{drawerOpen ? '▼' : '▲'}</span>
         </button>

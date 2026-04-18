@@ -108,14 +108,14 @@ export default function ClubDirectoryPage() {
                   className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                   <div className="flex items-start justify-between mb-4">
                     <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center text-3xl">
-                      🎾
+                      
                     </div>
                     {areaLabel && (
                       <span className="text-[10px] px-2 py-1 rounded-full bg-[#C4A265]/10 text-[#C4A265] font-bold uppercase">{areaLabel}</span>
                     )}
                   </div>
                   <h3 className="text-xl font-bold text-[#1A1A1A] mb-2">{c.name}</h3>
-                  {c.address && <p className="text-sm text-[#1A1A1A]/60 mb-3">📍 {c.address}</p>}
+                  {c.address && <p className="text-sm text-[#1A1A1A]/60 mb-3">{c.address}</p>}
                   {c.description && (
                     <p className="text-sm text-[#1A1A1A]/70 line-clamp-2">{c.description}</p>
                   )}

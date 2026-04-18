@@ -226,7 +226,7 @@ export default function ClubCourtsPage() {
 
         {visibleCourts.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center">
-            <p className="text-5xl mb-3">🎾</p>
+            <p className="text-5xl mb-3"></p>
             <p className="text-[#1A1A1A]/60">{courts.length === 0 ? '暫無球場' : '此球會的球場只開放會員使用，請先申請加入。'}</p>
           </div>
         ) : (
@@ -242,7 +242,7 @@ export default function ClubCourtsPage() {
                         {c.surface === 'Hard' ? '硬地' : c.surface === 'Clay' ? '泥地' : c.surface}
                         {c.indoor ? ' · 室內' : ' · 室外'}
                       </div>
-                      {c.location && <div className="text-[10px] font-normal text-[#1A1A1A]/35">📍 {c.location}</div>}
+                      {c.location && <div className="text-[10px] font-normal text-[#1A1A1A]/35">{c.location}</div>}
                     </th>
                   ))}
                 </tr>
@@ -285,7 +285,7 @@ export default function ClubCourtsPage() {
             <div className="bg-white border-t border-[#1A1A1A]/10 px-6 py-5 shadow-[0_-8px_32px_rgba(0,0,0,0.12)]" style={{ animation: dismissing ? 'slideDown 0.3s ease-in forwards' : 'slideUp 0.3s ease-out' }}>
               <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
                 <div className="flex items-center gap-5 flex-1 min-w-0">
-                  <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center shrink-0"><span className="text-2xl">🎾</span></div>
+                  <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center shrink-0"><span className="text-2xl"></span></div>
                   <div className="min-w-0">
                     <h3 className="font-bold text-[#1A1A1A] text-lg">{selectedCourt?.name}</h3>
                     <p className="text-[#1A1A1A]/50 text-sm mt-0.5">

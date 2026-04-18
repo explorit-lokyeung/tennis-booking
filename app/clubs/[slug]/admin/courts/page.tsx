@@ -176,7 +176,7 @@ export default function ClubAdminCourtsPage() {
                     </select>
                   </div>
                   <input type="text" value={editRate.location || ''} onChange={e => setEditRate({ ...editRate, location: e.target.value })}
-                    className="w-full px-3 py-2 border rounded text-sm bg-white" placeholder="📍 地區" />
+                    className="w-full px-3 py-2 border rounded text-sm bg-white" placeholder="地區" />
                   <input type="text" value={editRate.address || ''} onChange={e => setEditRate({ ...editRate, address: e.target.value })}
                     className="w-full px-3 py-2 border rounded text-sm bg-white" placeholder="地址" />
                   <textarea value={editRate.description || ''} onChange={e => setEditRate({ ...editRate, description: e.target.value })}

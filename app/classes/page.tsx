@@ -207,7 +207,7 @@ export default function AllClassesPage() {
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/clubs/${cls.club.slug}`; }}
                     className="text-xs text-[#1A1A1A]/60 mb-3 hover:text-[#C4A265] cursor-pointer inline-flex items-center gap-1 w-fit"
                   >
-                    🎾 {cls.club.name}
+                     {cls.club.name}
                   </div>
                   <div className="mt-auto">
                     <div className="flex justify-between items-center mb-2">

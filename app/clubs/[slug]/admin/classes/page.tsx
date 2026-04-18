@@ -181,7 +181,7 @@ export default function ClubAdminClassesPage() {
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap">
-                <button onClick={() => fetchParticipants(cls.id)} className="px-4 py-2 rounded-lg font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100">👥 參加者</button>
+                <button onClick={() => fetchParticipants(cls.id)} className="px-4 py-2 rounded-lg font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100">參加者</button>
                 <button onClick={() => handleToggleVisible(cls.id, cls.visible !== false)}
                   className={`px-4 py-2 rounded-lg font-semibold ${cls.visible !== false ? 'bg-gray-100 text-gray-700' : 'bg-emerald-100 text-emerald-700'}`}>
                   {cls.visible !== false ? '隱藏' : '顯示'}
@@ -203,7 +203,7 @@ export default function ClubAdminClassesPage() {
                           <div className="flex-1 min-w-0">
                             <span className="text-sm font-bold text-[#1A1A1A]">{p.name || '未設名稱'}</span>
                             <div className="flex gap-4 mt-1 text-xs text-[#1A1A1A]/50">
-                              <span>📧 {p.email || '—'}</span><span>📱 {p.phone || '—'}</span>
+                              <span>{p.email || '—'}</span><span>{p.phone || '—'}</span>
                             </div>
                           </div>
                           <button onClick={async () => {
