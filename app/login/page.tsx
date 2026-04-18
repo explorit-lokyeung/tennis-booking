@@ -152,6 +152,14 @@ export default function LoginPage() {
             >
               {loading ? '處理中...' : tab === 'login' ? 'Sign In' : 'Create Account'}
             </button>
+
+            {tab === 'login' && (
+              <div className="text-center">
+                <Link href="/forgot-password" className="text-xs text-[#1A1A1A]/60 hover:text-[#C4A265] font-semibold">
+                  忘記密碼？
+                </Link>
+              </div>
+            )}
           </form>
         </div>
       </div>

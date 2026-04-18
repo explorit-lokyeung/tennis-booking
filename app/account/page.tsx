@@ -105,6 +105,11 @@ export default function AccountPage() {
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [clubFilter, setClubFilter] = useState<string>('all');
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
   const router = useRouter();
   const { toast } = useToast();
 
@@ -150,6 +155,27 @@ export default function AccountPage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
+  };
+
+  const openEdit = () => {
+    setEditName(user?.user_metadata?.name || '');
+    setEditPhone(user?.user_metadata?.phone || '');
+    setEditError('');
+    setEditOpen(true);
+  };
+
+  const saveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError('');
+    setEditSaving(true);
+    const { data, error } = await supabase.auth.updateUser({
+      data: { name: editName.trim(), phone: editPhone.trim() },
+    });
+    setEditSaving(false);
+    if (error) { setEditError(error.message || '更新失敗'); return; }
+    if (data?.user) setUser(data.user);
+    setEditOpen(false);
+    toast('已更新個人資料');
   };
 
   const cancelBooking = async (bookingId: string, slotId: string) => {
@@ -276,10 +302,18 @@ export default function AccountPage() {
             )}
             <h1 className="text-xl font-bold text-[#1A1A1A]">{userName}</h1>
             <p className="text-sm text-[#1A1A1A]/50">{user.email}</p>
+            {user.user_metadata?.phone && (
+              <p className="text-xs text-[#1A1A1A]/40 mt-0.5">📱 {user.user_metadata.phone}</p>
+            )}
           </div>
-          <button onClick={handleLogout} className="text-sm text-red-500 font-semibold hover:underline">
-            登出
-          </button>
+          <div className="flex flex-col gap-1.5 items-end">
+            <button onClick={openEdit} className="text-xs font-bold bg-[#C4A265]/10 text-[#C4A265] px-3 py-1.5 rounded-full hover:bg-[#C4A265]/20 transition-all">
+              編輯資料
+            </button>
+            <button onClick={handleLogout} className="text-sm text-red-500 font-semibold hover:underline">
+              登出
+            </button>
+          </div>
         </div>
 
         {coachMemberships.length > 0 && (
@@ -466,6 +500,53 @@ export default function AccountPage() {
           </Link>
         </div>
       </div>
+
+      {editOpen && (
+        <div
+          className="fixed inset-0 bg-[#1A1A1A]/50 flex items-center justify-center px-4 z-50"
+          onClick={() => setEditOpen(false)}
+        >
+          <form
+            onSubmit={saveProfile}
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6"
+          >
+            <h3 className="text-xl font-bold text-[#1A1A1A] mb-1">編輯個人資料</h3>
+            <p className="text-xs text-[#1A1A1A]/50 mb-5">電郵地址無法修改</p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#1A1A1A]/70 mb-1">姓名</label>
+                <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#1A1A1A]/10 bg-white text-[#1A1A1A] focus:outline-none focus:border-[#C4A265]" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#1A1A1A]/70 mb-1">電話</label>
+                <input type="tel" value={editPhone} onChange={e => setEditPhone(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#1A1A1A]/10 bg-white text-[#1A1A1A] focus:outline-none focus:border-[#C4A265]" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#1A1A1A]/70 mb-1">電郵</label>
+                <input type="email" disabled value={user.email || ''}
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#1A1A1A]/10 bg-[#FFF8F0] text-[#1A1A1A]/60" />
+              </div>
+            </div>
+
+            {editError && <p className="text-red-500 text-sm mt-3">{editError}</p>}
+
+            <div className="flex gap-2 mt-6">
+              <button type="button" onClick={() => setEditOpen(false)}
+                className="flex-1 bg-[#FFF8F0] text-[#1A1A1A] py-2.5 rounded-full font-bold uppercase tracking-wider text-xs hover:bg-[#FFF8F0]/60 transition-all">
+                取消
+              </button>
+              <button type="submit" disabled={editSaving}
+                className="flex-1 bg-[#1A1A1A] text-[#FFF8F0] py-2.5 rounded-full font-bold uppercase tracking-wider text-xs hover:bg-[#1A1A1A]/80 transition-all disabled:opacity-50">
+                {editSaving ? '儲存中...' : '儲存'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {selected && (
         <div

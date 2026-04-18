@@ -3,13 +3,16 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { isPlatformAdmin } from '@/lib/platform';
 import { usePathname } from 'next/navigation';
+import NotificationBell from './NotificationBell';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   if (pathname?.includes('/admin')) return null;
   const { user } = useAuth();
+  const showPlatformAdmin = isPlatformAdmin(user?.id);
 
   return (
     <header className="sticky top-0 z-50 bg-[#FFF8F0] border-b border-[#1A1A1A]/10">
@@ -29,6 +32,12 @@ export default function Header() {
             <Link href="/classes" className="text-sm font-medium tracking-wide text-[#1A1A1A] hover:text-[#C4A265] transition-colors uppercase">
               課程
             </Link>
+            {showPlatformAdmin && (
+              <Link href="/admin" className="text-xs font-bold tracking-wider text-[#C4A265] hover:text-[#1A1A1A] transition-colors uppercase border border-[#C4A265]/40 px-3 py-1 rounded-full">
+                平台管理
+              </Link>
+            )}
+            {user && <NotificationBell userId={user.id} />}
             {user ? (
               <Link href="/account" className="text-sm font-medium tracking-wide text-[#1A1A1A] hover:text-[#C4A265] transition-colors uppercase">
                 {user.user_metadata?.name || user.email?.split('@')[0] || '帳戶'}
@@ -53,6 +62,9 @@ export default function Header() {
               <Link href="/clubs" className="text-sm font-medium tracking-wide text-[#1A1A1A] uppercase" onClick={() => setMobileMenuOpen(false)}>球會</Link>
               <Link href="/courts" className="text-sm font-medium tracking-wide text-[#1A1A1A] uppercase" onClick={() => setMobileMenuOpen(false)}>球場</Link>
               <Link href="/classes" className="text-sm font-medium tracking-wide text-[#1A1A1A] uppercase" onClick={() => setMobileMenuOpen(false)}>課程</Link>
+              {showPlatformAdmin && (
+                <Link href="/admin" className="text-sm font-bold tracking-wider text-[#C4A265] uppercase" onClick={() => setMobileMenuOpen(false)}>平台管理</Link>
+              )}
               {user ? (
                 <Link href="/account" className="text-sm font-medium tracking-wide text-[#1A1A1A] uppercase" onClick={() => setMobileMenuOpen(false)}>
                   {user.user_metadata?.name || user.email?.split('@')[0] || '帳戶'}

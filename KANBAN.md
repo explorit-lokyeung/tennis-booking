@@ -64,8 +64,9 @@ T13 → T14 → T15 → T16 → T17 → T18 → T19 → T20 → T21 → T22 → 
 ## 📝 Notes
 
 - Supabase project: `xtinvnccabizaweqyszz.supabase.co`
-- Supabase anon key: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0aW52bmNjYWJpemF3ZXF5c3p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MjI4MDAsImV4cCI6MjA5MTk5ODgwMH0.eE5GKwPCw2qgK-4fs4_Lv7hX7zbxmjXXT2e98nFMvCI`
-- Supabase service_role key: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0aW52bmNjYWJpemF3ZXF5c3p6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjQyMjgwMCwiZXhwIjoyMDkxOTk4ODAwfQ.3JN0UtFGPBvvbNiqKU7ie8i6FfDxlgnIUZ_cQbIM50g`
+- Supabase anon key: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0aW52bmNjYWJpemF3ZXF5c3p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MjI4MDAsImV4cCI6MjA5MTk5ODgwMH0.eE5GKwPCw2qgK-4fs4_Lv7hX7zbxmjXXT2e98nFMvCI` (public by design)
+- Supabase service_role key: REDACTED — see Supabase Dashboard → Project Settings → API
+- Supabase DB password: REDACTED — see Supabase Dashboard → Project Settings → Database
 - Admin user: lok.yeung.hk@gmail.com (c87080df-1e1f-4765-a9f5-af832156e87a)
 - Branch: feature/multi-tenant
 - Design: Nike-inspired cream/black/gold, Traditional Chinese UI
