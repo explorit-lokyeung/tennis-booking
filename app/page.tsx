@@ -1,18 +1,26 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-import { getClubs, getPlatformStats, type PlatformStats } from '@/lib/queries';
+import { getClubs, getAllCourts, getPlatformStats, type PlatformStats, type CourtWithClub } from '@/lib/queries';
+
+const CourtsMap = dynamic(() => import('@/components/CourtsMap'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[50vh] rounded-2xl bg-white animate-pulse" />,
+});
 import type { Club } from '@/lib/types';
 
 export default function PlatformLandingPage() {
   const [clubs, setClubs] = useState<Club[]>([]);
+  const [courts, setCourts] = useState<CourtWithClub[]>([]);
   const [stats, setStats] = useState<PlatformStats>({ clubs: 0, courts: 0, classes: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getClubs(), getPlatformStats()]).then(([all, s]) => {
+    Promise.all([getClubs(), getPlatformStats(), getAllCourts()]).then(([all, s, c]) => {
       setClubs(all.slice(0, 6));
+      setCourts(c);
       setStats(s);
       setLoading(false);
     });
@@ -101,6 +109,28 @@ export default function PlatformLandingPage() {
                   )}
                 </Link>
               ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Map View */}
+      <section className="py-16 px-4 bg-white border-t border-[#1A1A1A]/10">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-[#1A1A1A]">球場位置</h2>
+              <p className="text-sm text-[#1A1A1A]/50 mt-1">全港 {stats.courts} 個球場一覽</p>
+            </div>
+            <Link href="/courts" className="text-sm font-bold text-[#C4A265] hover:underline uppercase tracking-wide">
+              查看全部 →
+            </Link>
+          </div>
+          {courts.length > 0 ? (
+            <CourtsMap courts={courts} />
+          ) : (
+            <div className="w-full h-[50vh] rounded-2xl bg-[#FFF8F0] flex items-center justify-center">
+              <p className="text-[#1A1A1A]/40">載入中...</p>
             </div>
           )}
         </div>
