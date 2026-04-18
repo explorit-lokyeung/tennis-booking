@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { USE_DUMMY_DATA, getDemoClubs } from '@/lib/dummy-data';
 import type { Club } from '@/lib/types';
 
 export default function ClubDirectoryPage() {
@@ -11,6 +12,11 @@ export default function ClubDirectoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (USE_DUMMY_DATA) {
+      setClubs(getDemoClubs());
+      setLoading(false);
+      return;
+    }
     supabase
       .from('clubs')
       .select('*')

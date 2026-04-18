@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { useClub, useMembership, hasRole, isApprovedMember } from '@/lib/club';
+import { USE_DUMMY_DATA, getDemoClub, getDemoCourts, getDemoClasses } from '@/lib/dummy-data';
 import type { Court, TennisClass, Visibility } from '@/lib/types';
 
 const vizBadge: Record<Visibility, { label: string; cls: string }> = {
@@ -18,7 +19,8 @@ export default function ClubHomepage() {
   const params = useParams();
   const slug = params?.slug as string;
   const { user } = useAuth();
-  const { club, loading } = useClub(slug);
+  const { club: dbClub, loading } = useClub(slug);
+  const club = USE_DUMMY_DATA ? getDemoClub(slug) : dbClub;
   const { membership } = useMembership(club?.id, user?.id);
 
   const [courts, setCourts] = useState<Court[]>([]);
@@ -28,6 +30,11 @@ export default function ClubHomepage() {
 
   useEffect(() => {
     if (!club) return;
+    if (USE_DUMMY_DATA) {
+      setCourts(getDemoCourts(club.id) as unknown as Court[]);
+      setClasses(getDemoClasses(club.id) as unknown as TennisClass[]);
+      return;
+    }
     supabase.from('courts').select('*').eq('club_id', club.id).order('name')
       .then(({ data }) => { if (data) setCourts(data as Court[]); });
     supabase.from('classes').select('*').eq('club_id', club.id).neq('visible', false).order('id')
@@ -44,7 +51,7 @@ export default function ClubHomepage() {
     setJoinMsg(error ? '申請失敗：' + error.message : '申請已提交，等待審批');
   };
 
-  if (loading) return <main className="min-h-screen bg-[#FFF8F0]" />;
+  if (loading && !USE_DUMMY_DATA) return <main className="min-h-screen bg-[#FFF8F0]" />;
   if (!club) {
     return (
       <main className="min-h-screen bg-[#FFF8F0] flex items-center justify-center">
