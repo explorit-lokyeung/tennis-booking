@@ -57,12 +57,12 @@ export default function PlatformAdminDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Link href="/admin/clubs" className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-          <p className="text-2xl mb-2">🏛️</p>
+          <p className="text-2xl mb-2"></p>
           <h3 className="font-bold text-[#1A1A1A] mb-1">球會管理</h3>
           <p className="text-sm text-[#1A1A1A]/60">建立新球會、編輯資料、啟用／停用</p>
         </Link>
         <Link href="/admin/clubs/new" className="bg-[#C4A265] text-white rounded-2xl shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-          <p className="text-2xl mb-2">➕</p>
+          <p className="text-2xl mb-2">+</p>
           <h3 className="font-bold mb-1">新增球會</h3>
           <p className="text-sm text-white/80">為新客戶建立球會頁面同預設設定</p>
         </Link>

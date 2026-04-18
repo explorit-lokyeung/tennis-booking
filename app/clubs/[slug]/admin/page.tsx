@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { MapPin, GraduationCap, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useClub } from '@/lib/club';
 
@@ -73,17 +74,17 @@ export default function ClubAdminDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link href={`${base}/courts`} className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-          <p className="text-2xl mb-2"></p>
+          <MapPin className="w-6 h-6 text-[#C4A265] mb-2" />
           <h3 className="font-bold text-[#1A1A1A] mb-1">球場管理</h3>
           <p className="text-sm text-[#1A1A1A]/60">開放時段、設定價格、取消預約</p>
         </Link>
         <Link href={`${base}/classes`} className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-          <p className="text-2xl mb-2"></p>
+          <GraduationCap className="w-6 h-6 text-[#C4A265] mb-2" />
           <h3 className="font-bold text-[#1A1A1A] mb-1">課程管理</h3>
           <p className="text-sm text-[#1A1A1A]/60">新增課程、管理參加者</p>
         </Link>
         <Link href={`${base}/members`} className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-          <p className="text-2xl mb-2"></p>
+          <Users className="w-6 h-6 text-[#C4A265] mb-2" />
           <h3 className="font-bold text-[#1A1A1A] mb-1">會員管理</h3>
           <p className="text-sm text-[#1A1A1A]/60">審批申請、角色、停用</p>
         </Link>

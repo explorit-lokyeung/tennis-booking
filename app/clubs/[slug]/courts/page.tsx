@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createPortal } from 'react-dom';
 import { useToast } from '@/components/Toast';
+import { MapPin } from 'lucide-react';
 import SuccessAnimation from '@/components/SuccessAnimation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
@@ -226,7 +227,7 @@ export default function ClubCourtsPage() {
 
         {visibleCourts.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center">
-            <p className="text-5xl mb-3"></p>
+            <div className="w-12 h-12 mx-auto mb-3 text-[#1A1A1A]/20"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
             <p className="text-[#1A1A1A]/60">{courts.length === 0 ? '暫無球場' : '此球會的球場只開放會員使用，請先申請加入。'}</p>
           </div>
         ) : (
@@ -285,7 +286,7 @@ export default function ClubCourtsPage() {
             <div className="bg-white border-t border-[#1A1A1A]/10 px-6 py-5 shadow-[0_-8px_32px_rgba(0,0,0,0.12)]" style={{ animation: dismissing ? 'slideDown 0.3s ease-in forwards' : 'slideUp 0.3s ease-out' }}>
               <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
                 <div className="flex items-center gap-5 flex-1 min-w-0">
-                  <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center shrink-0"><span className="text-2xl"></span></div>
+                  <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center shrink-0"><MapPin className="w-7 h-7 text-[#C4A265]" /></div>
                   <div className="min-w-0">
                     <h3 className="font-bold text-[#1A1A1A] text-lg">{selectedCourt?.name}</h3>
                     <p className="text-[#1A1A1A]/50 text-sm mt-0.5">

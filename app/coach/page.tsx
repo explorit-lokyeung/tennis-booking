@@ -73,7 +73,7 @@ export default function CoachDashboard() {
     return (
       <main className="min-h-screen bg-[#FFF8F0] flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <p className="text-5xl mb-4"></p>
+          <div className="w-12 h-12 mx-auto mb-4 text-[#1A1A1A]/20"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
           <h1 className="text-3xl font-bold text-[#1A1A1A] mb-3">未係教練</h1>
           <p className="text-[#1A1A1A]/60 mb-6">你仲未被任何球會認可為教練。如果你係教練，可以搵球會申請加入教練團隊。</p>
           <Link href="/clubs" className="inline-block bg-[#1A1A1A] text-white px-8 py-3 rounded-full font-bold uppercase tracking-wider text-sm">瀏覽球會</Link>
