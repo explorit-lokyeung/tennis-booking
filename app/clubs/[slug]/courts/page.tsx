@@ -312,7 +312,7 @@ export default function ClubCourtsPage() {
 
         {booked && (
           <div className="mt-8 bg-emerald-50 rounded-2xl p-6 text-center">
-            <p className="text-2xl mb-2">✅</p>
+            <svg className="w-10 h-10 mx-auto mb-2 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <h3 className="font-bold text-lg text-emerald-800">預約成功！</h3>
             <p className="text-emerald-600 text-sm mt-1">
               {selectedCourt?.name} — {dates[dateIdx].getMonth() + 1}月{dates[dateIdx].getDate()}日{' '}
