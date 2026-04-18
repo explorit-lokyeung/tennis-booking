@@ -298,28 +298,28 @@ export default function ClubCourtsPage() {
         {selections.length > 0 && !booked && typeof document !== 'undefined' && createPortal(
           <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-[9999]">
             <div className="bg-white border-t border-[#1A1A1A]/10 px-6 py-5 shadow-[0_-8px_32px_rgba(0,0,0,0.12)]" style={{ animation: dismissing ? 'slideDown 0.3s ease-in forwards' : 'slideUp 0.3s ease-out' }}>
-              <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
-                <div className="flex items-center gap-5 flex-1 min-w-0">
-                  <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center shrink-0"><MapPin className="w-7 h-7 text-[#C4A265]" /></div>
+              <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6">
+                <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
+                  <div className="w-10 h-10 md:w-14 md:h-14 bg-[#C4A265]/15 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0"><MapPin className="w-5 h-5 md:w-7 md:h-7 text-[#C4A265]" /></div>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-[#1A1A1A] text-lg">{selectedCourt?.name}</h3>
-                    <p className="text-[#1A1A1A]/50 text-sm mt-0.5">
+                    <h3 className="font-bold text-[#1A1A1A] text-sm md:text-lg">{selectedCourt?.name}</h3>
+                    <p className="text-[#1A1A1A]/50 text-xs md:text-sm mt-0.5 truncate">
                       {dates[dateIdx].getMonth() + 1}月{dates[dateIdx].getDate()}日 星期{DAY_NAMES[dates[dateIdx].getDay()]}
-                      {'  ·  '}{fmtHour(selections[0].hour)} – {fmtHour(selections[selections.length - 1].hour + 1)}
-                      {'  ·  '}{totalHours} 小時
+                      {' · '}{fmtHour(selections[0].hour)} – {fmtHour(selections[selections.length - 1].hour + 1)}
+                      {' · '}{totalHours} 小時
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-5 shrink-0">
-                  <div className="text-right">
+                <div className="flex items-center justify-between md:justify-end gap-3 md:gap-5">
+                  <div>
                     <p className="text-[#1A1A1A]/40 text-xs">總計</p>
-                    <span className="text-2xl font-bold text-[#C4A265]">${totalPrice}</span>
+                    <span className="text-xl md:text-2xl font-bold text-[#C4A265]">${totalPrice}</span>
                   </div>
                   <button onClick={handleConfirmBooking} disabled={loading}
-                    className="bg-[#1A1A1A] text-[#FFF8F0] px-8 py-3.5 rounded-full font-bold text-base hover:bg-[#1A1A1A]/80 transition-all disabled:opacity-50 active:scale-95 shadow-lg">
-                    {loading ? '⏳ 處理中...' : '確認預約'}
+                    className="bg-[#1A1A1A] text-[#FFF8F0] px-5 md:px-8 py-2.5 md:py-3.5 rounded-full font-bold text-sm md:text-base hover:bg-[#1A1A1A]/80 transition-all disabled:opacity-50 active:scale-95 shadow-lg">
+                    {loading ? '處理中...' : '確認預約'}
                   </button>
-                  <button onClick={() => { setDismissing(true); setTimeout(() => { setSelections([]); setDismissing(false); }, 300); }} className="text-[#1A1A1A]/30 hover:text-red-500 transition-colors text-xl ml-1">✕</button>
+                  <button onClick={() => { setDismissing(true); setTimeout(() => { setSelections([]); setDismissing(false); }, 300); }} className="text-[#1A1A1A]/30 hover:text-red-500 transition-colors text-lg">✕</button>
                 </div>
               </div>
             </div>
