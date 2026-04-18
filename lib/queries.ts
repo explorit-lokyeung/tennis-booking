@@ -60,3 +60,33 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     classes: cs.count ?? 0,
   };
 }
+
+export type ClubLite = Pick<Club, 'id' | 'slug' | 'name' | 'address'>;
+
+export interface ClassWithClub extends TennisClass {
+  club: ClubLite;
+}
+
+export interface CourtWithClub extends Court {
+  club: ClubLite;
+}
+
+/** Fetch every public/members class across all active clubs. */
+export async function getAllClasses(): Promise<ClassWithClub[]> {
+  const { data } = await supabase
+    .from('classes')
+    .select('*, club:clubs!inner(id, slug, name, address, is_active)')
+    .neq('visible', false)
+    .eq('club.is_active', true);
+  return (data as ClassWithClub[] | null)?.filter(c => c.club) ?? [];
+}
+
+/** Fetch every court across all active clubs. */
+export async function getAllCourts(): Promise<CourtWithClub[]> {
+  const { data } = await supabase
+    .from('courts')
+    .select('*, club:clubs!inner(id, slug, name, address, is_active)')
+    .eq('club.is_active', true)
+    .order('name');
+  return (data as CourtWithClub[] | null)?.filter(c => c.club) ?? [];
+}

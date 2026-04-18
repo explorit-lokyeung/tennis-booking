@@ -23,6 +23,12 @@ export default function Header() {
             <Link href="/clubs" className="text-sm font-medium tracking-wide text-[#1A1A1A] hover:text-[#C4A265] transition-colors uppercase">
               球會
             </Link>
+            <Link href="/courts" className="text-sm font-medium tracking-wide text-[#1A1A1A] hover:text-[#C4A265] transition-colors uppercase">
+              球場
+            </Link>
+            <Link href="/classes" className="text-sm font-medium tracking-wide text-[#1A1A1A] hover:text-[#C4A265] transition-colors uppercase">
+              課程
+            </Link>
             {user ? (
               <Link href="/account" className="text-sm font-medium tracking-wide text-[#1A1A1A] hover:text-[#C4A265] transition-colors uppercase">
                 {user.user_metadata?.name || user.email?.split('@')[0] || '帳戶'}
@@ -45,6 +51,8 @@ export default function Header() {
           <div className="md:hidden py-4 border-t border-[#1A1A1A]/10">
             <div className="flex flex-col gap-4">
               <Link href="/clubs" className="text-sm font-medium tracking-wide text-[#1A1A1A] uppercase" onClick={() => setMobileMenuOpen(false)}>球會</Link>
+              <Link href="/courts" className="text-sm font-medium tracking-wide text-[#1A1A1A] uppercase" onClick={() => setMobileMenuOpen(false)}>球場</Link>
+              <Link href="/classes" className="text-sm font-medium tracking-wide text-[#1A1A1A] uppercase" onClick={() => setMobileMenuOpen(false)}>課程</Link>
               {user ? (
                 <Link href="/account" className="text-sm font-medium tracking-wide text-[#1A1A1A] uppercase" onClick={() => setMobileMenuOpen(false)}>
                   {user.user_metadata?.name || user.email?.split('@')[0] || '帳戶'}

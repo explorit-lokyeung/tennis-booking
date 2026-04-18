@@ -30,12 +30,15 @@ export default function PlatformLandingPage() {
           <p className="text-xl md:text-2xl mb-10 text-white/80 max-w-2xl mx-auto">
             發掘香港嘅網球會。預約球場，報名課堂，由一個地方開始。
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
             <Link href="/clubs" className="bg-[#C4A265] text-[#1A1A1A] px-8 py-4 rounded-full font-bold text-lg hover:bg-[#D4B275] transition-colors">
               瀏覽所有球會
             </Link>
-            <Link href="/account" className="border-2 border-white/40 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/10 transition-colors">
-              我的帳戶
+            <Link href="/courts" className="border-2 border-white/40 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/10 transition-colors">
+              🗺️ 球場地圖
+            </Link>
+            <Link href="/classes" className="border-2 border-white/40 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/10 transition-colors">
+              🎓 所有課程
             </Link>
           </div>
         </div>
@@ -44,18 +47,18 @@ export default function PlatformLandingPage() {
       {/* Stats bar */}
       <section className="py-10 px-4 bg-white border-b border-[#1A1A1A]/10">
         <div className="max-w-4xl mx-auto grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-4xl md:text-5xl font-bold text-[#1A1A1A]">{stats.clubs}</p>
+          <Link href="/clubs" className="group">
+            <p className="text-4xl md:text-5xl font-bold text-[#1A1A1A] group-hover:text-[#C4A265] transition-colors">{stats.clubs}</p>
             <p className="text-xs md:text-sm text-[#1A1A1A]/50 uppercase tracking-wider mt-1">球會</p>
-          </div>
-          <div>
-            <p className="text-4xl md:text-5xl font-bold text-[#1A1A1A]">{stats.courts}</p>
+          </Link>
+          <Link href="/courts" className="group">
+            <p className="text-4xl md:text-5xl font-bold text-[#1A1A1A] group-hover:text-[#C4A265] transition-colors">{stats.courts}</p>
             <p className="text-xs md:text-sm text-[#1A1A1A]/50 uppercase tracking-wider mt-1">球場</p>
-          </div>
-          <div>
-            <p className="text-4xl md:text-5xl font-bold text-[#1A1A1A]">{stats.classes}</p>
+          </Link>
+          <Link href="/classes" className="group">
+            <p className="text-4xl md:text-5xl font-bold text-[#1A1A1A] group-hover:text-[#C4A265] transition-colors">{stats.classes}</p>
             <p className="text-xs md:text-sm text-[#1A1A1A]/50 uppercase tracking-wider mt-1">課程</p>
-          </div>
+          </Link>
         </div>
       </section>
 

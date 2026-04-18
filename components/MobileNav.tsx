@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation';
 const links = [
   { href: '/', icon: '🏠', label: '首頁' },
   { href: '/clubs', icon: '🎾', label: '球會' },
+  { href: '/courts', icon: '🏟️', label: '球場' },
+  { href: '/classes', icon: '🎓', label: '課程' },
   { href: '/account', icon: '👤', label: '我的' },
 ];
 
