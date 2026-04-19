@@ -26,7 +26,7 @@ export default function Header() {
   const pathname = usePathname();
   if (pathname?.includes('/admin')) return null;
   const { user } = useAuth();
-  const showPlatformAdmin = isPlatformAdmin(user?.id);
+  const showPlatformAdmin = isPlatformAdmin(user ?? undefined);
 
   return (
     <header className="sticky top-0 z-50 bg-[#FFF8F0] border-b border-[#1A1A1A]/10">

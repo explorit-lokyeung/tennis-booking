@@ -15,7 +15,7 @@ export default function PlatformAdminLayout({ children }: { children: React.Reac
   useEffect(() => {
     if (loading) return;
     if (!user) { router.push('/login'); return; }
-    if (!isPlatformAdmin(user.id)) { router.push('/'); return; }
+    if (!isPlatformAdmin(user)) { router.push('/'); return; }
     setChecked(true);
   }, [loading, user, router]);
 
