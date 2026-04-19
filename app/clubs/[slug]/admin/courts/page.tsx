@@ -274,150 +274,175 @@ export default function ClubAdminCourtsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {courts.map(c => (
             <div key={c.id} className="bg-[#FFF8F0] p-4 rounded-lg border border-[#1A1A1A]/10">
-              {editRate?.id === c.id ? (
-                <div className="space-y-2">
-                  <input type="text" value={editRate.name || ''} onChange={e => setEditRate({ ...editRate, name: e.target.value })}
-                    className="w-full px-3 py-2 border rounded text-sm bg-white" placeholder="球場名稱" />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs font-semibold text-[#1A1A1A]/50 block mb-1">預設價格 ($/小時)</label>
-                      <input type="number" value={editRate.rate} onChange={e => setEditRate({ ...editRate, rate: +e.target.value })}
-                        className="w-full px-3 py-2 border rounded text-sm bg-white" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[#1A1A1A]/50 block mb-1">可見性</label>
-                      <select value={editRate.visibility || 'public'} onChange={e => setEditRate({ ...editRate, visibility: e.target.value as Visibility })}
-                        className="w-full px-3 py-2 border rounded text-sm bg-white">
-                        <option value="public">公開</option>
-                        <option value="members">會員</option>
-                        <option value="private">私人</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-[#1A1A1A]/50 block mb-1">地區</label>
-                    <input type="text" value={editRate.location || ''} onChange={e => setEditRate({ ...editRate, location: e.target.value })}
-                      className="w-full px-3 py-2 border rounded text-sm bg-white" placeholder="例：油尖旺" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-[#1A1A1A]/50 block mb-1">地址</label>
-                    <input type="text" value={editRate.address || ''} onChange={e => setEditRate({ ...editRate, address: e.target.value })}
-                      className="w-full px-3 py-2 border rounded text-sm bg-white" placeholder="完整地址" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-[#1A1A1A]/50 block mb-1">場地描述</label>
-                    <textarea value={editRate.description || ''} onChange={e => setEditRate({ ...editRate, description: e.target.value })}
-                      className="w-full px-3 py-2 border rounded text-sm bg-white resize-none" rows={2} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-[#1A1A1A]/50 block mb-1">設施</label>
-                    <input type="text" value={editRate.facilities || ''} onChange={e => setEditRate({ ...editRate, facilities: e.target.value })}
-                      className="w-full px-3 py-2 border rounded text-sm bg-white" placeholder="例：燈光、更衣室" />
-                  </div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={editRate.indoor || false} onChange={e => setEditRate({ ...editRate, indoor: e.target.checked })} />
-                    室內場地
-                  </label>
-                  <input type="url" value={editRate.image_url || ''} onChange={e => setEditRate({ ...editRate, image_url: e.target.value })}
-                    className="w-full px-3 py-2 border rounded text-sm bg-white" placeholder="球場圖片 URL" />
-                  {editRate.image_url && <img src={editRate.image_url} alt="preview" className="w-full h-24 object-cover rounded" />}
-                  <div className="flex gap-2">
-                    <button onClick={updateCourtRate} className="bg-[#1A1A1A] text-white px-4 py-2 rounded text-xs font-semibold">儲存</button>
-                    <button onClick={() => setEditRate(null)} className="text-xs text-[#1A1A1A]/50 px-2">取消</button>
-                  </div>
-                  {/* Pricing Rules Section */}
-                  <div className="mt-3 pt-3 border-t border-[#1A1A1A]/10">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-semibold text-[#1A1A1A]/60">定價規則</p>
-                      <button onClick={() => setShowAddRule(showAddRule === c.id ? null : c.id)}
-                        className="text-xs text-[#C4A265] hover:underline">+ 新增</button>
-                    </div>
-                    {pricingRules.filter(r => r.court_id === c.id).length === 0 && (
-                      <p className="text-xs text-[#1A1A1A]/30">未設定，使用預設價格</p>
-                    )}
-                    {pricingRules.filter(r => r.court_id === c.id).map(r => (
-                      <div key={r.id} className="flex items-center justify-between text-xs py-1">
-                        <span className="text-[#1A1A1A]/70">
-                          <span className="inline-block px-1.5 py-0.5 rounded bg-[#C4A265]/10 text-[#C4A265] font-semibold mr-1">
-                            {DAY_TYPE_LABELS[r.day_type as PricingDayType]}
-                          </span>
-                          {r.hour_start}:00-{r.hour_end}:00
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <span className="font-bold text-[#C4A265]">${r.price}</span>
-                          <button onClick={() => deletePricingRule(r.id)} className="text-red-400 hover:text-red-600">×</button>
-                        </span>
-                      </div>
-                    ))}
-                    {showAddRule === c.id && (
-                      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowAddRule(null)}>
-                        <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
-                          <h3 className="text-lg font-bold text-[#1A1A1A] mb-4">新增定價規則 — {c.name}</h3>
-                          <div className="space-y-4">
-                            <div>
-                              <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">標籤（可選）</label>
-                              <input type="text" placeholder="例：繁忙時段" value={newRule.label}
-                                onChange={e => setNewRule(p => ({ ...p, label: e.target.value }))}
-                                className="w-full px-3 py-2 border rounded-lg text-sm" />
-                            </div>
-                            <div>
-                              <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">適用日子</label>
-                              <select value={newRule.day_type} onChange={e => setNewRule(p => ({ ...p, day_type: e.target.value as PricingDayType }))}
-                                className="w-full px-3 py-2 border rounded-lg text-sm">
-                                {Object.entries(DAY_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                              </select>
-                            </div>
-                            <div>
-                              <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">時段</label>
-                              <div className="flex items-center gap-3">
-                                <select value={newRule.hour_start} onChange={e => setNewRule(p => ({ ...p, hour_start: +e.target.value }))}
-                                  className="flex-1 px-3 py-2 border rounded-lg text-sm">
-                                  {Array.from({ length: 18 }, (_, i) => i + 6).map(h => <option key={h} value={h}>{h}:00</option>)}
-                                </select>
-                                <span className="text-sm text-[#1A1A1A]/40">至</span>
-                                <select value={newRule.hour_end} onChange={e => setNewRule(p => ({ ...p, hour_end: +e.target.value }))}
-                                  className="flex-1 px-3 py-2 border rounded-lg text-sm">
-                                  {Array.from({ length: 18 }, (_, i) => i + 6).filter(h => h > newRule.hour_start).map(h => <option key={h} value={h}>{h}:00</option>)}
-                                </select>
-                              </div>
-                            </div>
-                            <div>
-                              <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">每小時價格 (HKD)</label>
-                              <input type="number" value={newRule.price} onChange={e => setNewRule(p => ({ ...p, price: +e.target.value }))}
-                                className="w-full px-3 py-2 border rounded-lg text-sm" />
-                            </div>
-                            <div className="flex gap-3 pt-2">
-                              <button onClick={() => addPricingRule(c.id)}
-                                className="flex-1 px-4 py-2.5 bg-[#C4A265] text-white rounded-xl text-sm font-semibold hover:bg-[#b08d4f]">建立規則</button>
-                              <button onClick={() => setShowAddRule(null)}
-                                className="px-4 py-2.5 bg-gray-100 rounded-xl text-sm hover:bg-gray-200">取消</button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div>
-                <button onClick={() => setEditRate({ id: c.id, rate: c.hourly_rate, name: c.name, location: c.location || '', address: c.address || '', description: c.description || '', facilities: c.facilities || '', indoor: c.indoor || false, visibility: (c.visibility || 'public') as Visibility, image_url: (c as any).image_url || '' })} className="w-full text-left">
-                  <p className="font-bold text-[#1A1A1A] text-base">{c.name}</p>
-                  <p className="text-[#C4A265] font-bold text-lg">${c.hourly_rate}<span className="text-xs text-[#1A1A1A]/40 font-normal">/小時</span></p>
-                  <p className="text-xs text-[#1A1A1A]/50 mt-1">
-                    {(c.visibility || 'public') === 'public' ? '公開' : (c.visibility || 'public') === 'members' ? '僅會員' : '私人'}
-                    {c.indoor ? ' · 室內' : ' · 室外'}
-                  </p>
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); deleteCourt(c.id, c.name); }}
-                  className="mt-2 text-xs text-red-400 hover:text-red-600 transition-colors">
-                  刪除球場
-                </button>
+              <button onClick={() => setEditRate({ id: c.id, rate: c.hourly_rate, name: c.name, location: c.location || '', address: c.address || '', description: c.description || '', facilities: c.facilities || '', indoor: c.indoor || false, visibility: (c.visibility || 'public') as Visibility, image_url: (c as any).image_url || '' })} className="w-full text-left">
+                <p className="font-bold text-[#1A1A1A] text-base">{c.name}</p>
+                <p className="text-[#C4A265] font-bold text-lg">${c.hourly_rate}<span className="text-xs text-[#1A1A1A]/40 font-normal">/小時</span></p>
+                <p className="text-xs text-[#1A1A1A]/50 mt-1">
+                  {(c.visibility || 'public') === 'public' ? '公開' : (c.visibility || 'public') === 'members' ? '僅會員' : '私人'}
+                  {c.indoor ? ' · 室內' : ' · 室外'}
+                </p>
+              </button>
+              {pricingRules.filter(r => r.court_id === c.id).length > 0 && (
+                <div className="mt-2 pt-2 border-t border-[#1A1A1A]/5">
+                  {pricingRules.filter(r => r.court_id === c.id).map(r => (
+                    <p key={r.id} className="text-xs text-[#1A1A1A]/50">
+                      {DAY_TYPE_LABELS[r.day_type as PricingDayType]} {r.hour_start}:00-{r.hour_end}:00 <span className="text-[#C4A265] font-semibold">${r.price}</span>
+                    </p>
+                  ))}
                 </div>
               )}
+              <button onClick={(e) => { e.stopPropagation(); deleteCourt(c.id, c.name); }}
+                className="mt-2 text-xs text-red-400 hover:text-red-600 transition-colors">
+                刪除球場
+              </button>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Court Edit Modal */}
+      {editRate && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setEditRate(null)}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-[#1A1A1A] mb-4">編輯球場</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">球場名稱</label>
+                <input type="text" value={editRate.name || ''} onChange={e => setEditRate({ ...editRate, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">預設價格 ($/小時)</label>
+                  <input type="number" value={editRate.rate} onChange={e => setEditRate({ ...editRate, rate: +e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">可見性</label>
+                  <select value={editRate.visibility || 'public'} onChange={e => setEditRate({ ...editRate, visibility: e.target.value as Visibility })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm">
+                    <option value="public">公開</option>
+                    <option value="members">會員</option>
+                    <option value="private">私人</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">地區</label>
+                <input type="text" value={editRate.location || ''} onChange={e => setEditRate({ ...editRate, location: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="例：油尖旺" />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">地址</label>
+                <input type="text" value={editRate.address || ''} onChange={e => setEditRate({ ...editRate, address: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="完整地址" />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">場地描述</label>
+                <textarea value={editRate.description || ''} onChange={e => setEditRate({ ...editRate, description: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm resize-none" rows={3} />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">設施</label>
+                <input type="text" value={editRate.facilities || ''} onChange={e => setEditRate({ ...editRate, facilities: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="例：燈光、更衣室" />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={editRate.indoor || false} onChange={e => setEditRate({ ...editRate, indoor: e.target.checked })} />
+                室內場地
+              </label>
+              <div>
+                <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">球場圖片 URL</label>
+                <input type="url" value={editRate.image_url || ''} onChange={e => setEditRate({ ...editRate, image_url: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm" />
+                {editRate.image_url && <img src={editRate.image_url} alt="preview" className="w-full h-32 object-cover rounded-lg mt-2" />}
+              </div>
+
+              {/* Pricing Rules inside edit modal */}
+              <div className="pt-4 border-t border-[#1A1A1A]/10">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-[#1A1A1A]/60">定價規則</p>
+                  <button onClick={() => setShowAddRule(showAddRule === editRate.id ? null : editRate.id)}
+                    className="text-xs text-[#C4A265] hover:underline font-semibold">+ 新增規則</button>
+                </div>
+                {pricingRules.filter(r => r.court_id === editRate.id).length === 0 && (
+                  <p className="text-xs text-[#1A1A1A]/30">未設定，所有時段使用預設價格</p>
+                )}
+                {pricingRules.filter(r => r.court_id === editRate.id).map(r => (
+                  <div key={r.id} className="flex items-center justify-between py-2 border-b border-[#1A1A1A]/5">
+                    <span className="text-sm text-[#1A1A1A]/70">
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-[#C4A265]/10 text-[#C4A265] text-xs font-semibold mr-2">
+                        {DAY_TYPE_LABELS[r.day_type as PricingDayType]}
+                      </span>
+                      {r.hour_start}:00 - {r.hour_end}:00
+                    </span>
+                    <span className="flex items-center gap-3">
+                      <span className="font-bold text-[#C4A265]">${r.price}</span>
+                      <button onClick={() => deletePricingRule(r.id)} className="text-red-400 hover:text-red-600 text-sm">×</button>
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button onClick={updateCourtRate}
+                  className="flex-1 px-4 py-2.5 bg-[#1A1A1A] text-white rounded-xl text-sm font-semibold hover:bg-[#333]">儲存</button>
+                <button onClick={() => setEditRate(null)}
+                  className="px-4 py-2.5 bg-gray-100 rounded-xl text-sm hover:bg-gray-200">取消</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Pricing Rule Modal */}
+      {showAddRule && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4" onClick={() => setShowAddRule(null)}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-[#1A1A1A] mb-4">新增定價規則</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">標籤（可選）</label>
+                <input type="text" placeholder="例：繁忙時段" value={newRule.label}
+                  onChange={e => setNewRule(p => ({ ...p, label: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm" />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">適用日子</label>
+                <select value={newRule.day_type} onChange={e => setNewRule(p => ({ ...p, day_type: e.target.value as PricingDayType }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm">
+                  {Object.entries(DAY_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">時段</label>
+                <div className="flex items-center gap-3">
+                  <select value={newRule.hour_start} onChange={e => setNewRule(p => ({ ...p, hour_start: +e.target.value }))}
+                    className="flex-1 px-3 py-2 border rounded-lg text-sm">
+                    {Array.from({ length: 18 }, (_, i) => i + 6).map(h => <option key={h} value={h}>{h}:00</option>)}
+                  </select>
+                  <span className="text-sm text-[#1A1A1A]/40">至</span>
+                  <select value={newRule.hour_end} onChange={e => setNewRule(p => ({ ...p, hour_end: +e.target.value }))}
+                    className="flex-1 px-3 py-2 border rounded-lg text-sm">
+                    {Array.from({ length: 18 }, (_, i) => i + 6).filter(h => h > newRule.hour_start).map(h => <option key={h} value={h}>{h}:00</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">每小時價格 (HKD)</label>
+                <input type="number" value={newRule.price} onChange={e => setNewRule(p => ({ ...p, price: +e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => addPricingRule(showAddRule)}
+                  className="flex-1 px-4 py-2.5 bg-[#C4A265] text-white rounded-xl text-sm font-semibold hover:bg-[#b08d4f]">建立規則</button>
+                <button onClick={() => setShowAddRule(null)}
+                  className="px-4 py-2.5 bg-gray-100 rounded-xl text-sm hover:bg-gray-200">取消</button>
+              </div>
+            </div>
+          </div>
+              </div>
+      )}
 
       <div className="flex items-center gap-2 mb-4">
         <button onClick={() => setWeekPage(0)} disabled={weekPage === 0}
