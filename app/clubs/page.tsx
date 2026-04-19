@@ -108,8 +108,8 @@ export default function ClubDirectoryPage() {
                 <Link key={c.id} href={`/clubs/${c.slug}`}
                   className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center">
-                      <Building2 className="w-7 h-7 text-[#C4A265]" />
+                    <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center overflow-hidden">
+                      {c.logo_url ? <img src={c.logo_url} alt={c.name} className="w-full h-full object-cover rounded-2xl" /> : <Building2 className="w-7 h-7 text-[#C4A265]" />}
                     </div>
                     {areaLabel && (
                       <span className="text-[10px] px-2 py-1 rounded-full bg-[#C4A265]/10 text-[#C4A265] font-bold uppercase">{areaLabel}</span>

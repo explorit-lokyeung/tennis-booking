@@ -39,6 +39,7 @@ export default function ClubAnalyticsPage() {
   const [daily, setDaily] = useState<DailyStat[]>([]);
   const [courts, setCourts] = useState<CourtRow[]>([]);
   const [classes, setClasses] = useState<ClassRow[]>([]);
+  const [heatmap, setHeatmap] = useState<number[][]>(Array.from({ length: 7 }, () => Array(16).fill(0)));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function ClubAnalyticsPage() {
       // Bookings (with slot price for revenue) in range
       const { data: bk } = await supabase
         .from('bookings')
-        .select('id, date, court_id, slot_id, slots!inner(price), courts!inner(id, name, hourly_rate)')
+        .select('id, date, hour, court_id, slot_id, slots!inner(price), courts!inner(id, name, hourly_rate)')
         .eq('club_id', club.id)
         .gte('date', sinceStr);
 
@@ -76,6 +77,15 @@ export default function ClubAnalyticsPage() {
         if (row) { row.bookings += 1; row.revenue += b.price; }
       }
       setDaily(Array.from(dailyMap.values()));
+
+      // Heatmap: day-of-week × hour
+      const hm = Array.from({ length: 7 }, () => Array(16).fill(0));
+      for (const b of bkRows) {
+        const dow = new Date(b.date + 'T00:00:00+08:00').getDay();
+        const hr = (b as unknown as { hour?: number }).hour;
+        if (hr != null && hr >= 7 && hr <= 22) hm[dow][hr - 7]++;
+      }
+      setHeatmap(hm);
 
       // Per-court utilisation
       const courtMap = new Map<string, CourtRow>();
@@ -228,6 +238,50 @@ export default function ClubAnalyticsPage() {
               })}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Utilization Heatmap */}
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        <h3 className="text-lg font-bold text-[#1A1A1A] mb-4">預約熱度圖</h3>
+        <p className="text-xs text-[#1A1A1A]/50 mb-4">星期 × 時段預約密度</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className="text-left p-1 text-[#1A1A1A]/40 w-12"></th>
+                {Array.from({ length: 16 }, (_, i) => (
+                  <th key={i} className="p-1 text-center text-[#1A1A1A]/40 font-normal">{i + 7}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {['日', '一', '二', '三', '四', '五', '六'].map((d, di) => {
+                const maxVal = Math.max(1, ...heatmap.flat());
+                return (
+                  <tr key={di}>
+                    <td className="p-1 text-[#1A1A1A]/60 font-semibold">星期{d}</td>
+                    {heatmap[di].map((v, hi) => {
+                      const intensity = v / maxVal;
+                      const bg = v === 0 ? '#f5f5f5' : `rgba(196, 162, 101, ${0.15 + intensity * 0.85})`;
+                      return (
+                        <td key={hi} className="p-0.5">
+                          <div className="w-full aspect-square rounded" style={{ background: bg }} title={`${v} 個預約`} />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center gap-2 mt-3 text-[10px] text-[#1A1A1A]/40">
+          <span>少</span>
+          {[0.15, 0.35, 0.55, 0.75, 1].map((o, i) => (
+            <div key={i} className="w-4 h-4 rounded" style={{ background: `rgba(196, 162, 101, ${o})` }} />
+          ))}
+          <span>多</span>
         </div>
       </div>
     </div>

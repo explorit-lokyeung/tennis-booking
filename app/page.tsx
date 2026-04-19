@@ -100,8 +100,8 @@ export default function PlatformLandingPage() {
               {clubs.map(c => (
                 <Link key={c.id} href={`/clubs/${c.slug}`}
                   className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                  <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mb-4">
-                    <Building2 className="w-7 h-7 text-[#C4A265]" />
+                  <div className="w-14 h-14 bg-[#C4A265]/15 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
+                    {c.logo_url ? <img src={c.logo_url} alt={c.name} className="w-full h-full object-cover rounded-2xl" /> : <Building2 className="w-7 h-7 text-[#C4A265]" />}
                   </div>
                   <h3 className="text-xl font-bold text-[#1A1A1A] mb-2">{c.name}</h3>
                   {c.address && <p className="text-sm text-[#1A1A1A]/60 mb-3">{c.address}</p>}

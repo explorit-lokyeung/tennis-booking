@@ -52,7 +52,19 @@ export default function ClubClassDetailPage() {
     setEnrolling(true);
     setError('');
 
-    if (cls.spots_available <= 0) { setError('名額已滿'); setEnrolling(false); return; }
+    if (cls.spots_available <= 0) {
+      // Waitlist
+      const { error: wlErr } = await supabase.from('class_bookings').insert({
+        class_id: cls.id, club_id: club.id, user_id: user.id, status: 'waitlisted',
+      });
+      if (wlErr) {
+        setError(wlErr.message.includes('duplicate') ? '你已報名或已在等候名單' : '加入等候名單失敗');
+        setEnrolling(false); return;
+      }
+      setEnrolled(true); setEnrolling(false);
+      setError('名額已滿，已加入等候名單。有人取消時會自動通知你。');
+      return;
+    }
 
     const { error: insertErr } = await supabase.from('class_bookings').insert({
       class_id: cls.id, club_id: club.id, user_id: user.id, status: 'confirmed',
