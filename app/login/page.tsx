@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [tab, setTab] = useState<'login' | 'register'>('login');
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { signIn, signUp } = useAuth();
@@ -55,6 +56,9 @@ export default function LoginPage() {
           setLoading(false);
           return;
         }
+        setSuccess('註冊成功！請查看你嘅電郵並點擊確認連結。');
+        setLoading(false);
+        return;
       }
       router.push('/account/');
     } catch (err) {
@@ -153,6 +157,12 @@ export default function LoginPage() {
             />
 
             {error && <p className="text-red-500 text-sm">{error}</p>}
+            {success && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-center">
+                <p className="text-emerald-700 font-semibold">{success}</p>
+                <p className="text-emerald-600 text-sm mt-1">確認後即可登入。</p>
+              </div>
+            )}
 
             <button
               type="submit"
