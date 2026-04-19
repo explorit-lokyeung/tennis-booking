@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useClub } from '@/lib/club';
-import type { Court, Slot, Visibility } from '@/lib/types';
+import type { Court, Slot, Visibility, CourtPricingRule, PricingDayType } from '@/lib/types';
+import { DAY_TYPE_LABELS } from '@/lib/pricing';
 
 const fmtHour = (h: number) => `${h > 12 ? h - 12 : h}:00 ${h >= 12 ? 'PM' : 'AM'}`;
 const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
@@ -37,6 +38,9 @@ export default function ClubAdminCourtsPage() {
   const [editRate, setEditRate] = useState<EditRate | null>(null);
   const [showNewCourt, setShowNewCourt] = useState(false);
   const [newCourt, setNewCourt] = useState({ name: '', surface: 'hard', indoor: false, hourly_rate: 200 });
+  const [pricingRules, setPricingRules] = useState<CourtPricingRule[]>([]);
+  const [showAddRule, setShowAddRule] = useState<string | null>(null); // court_id
+  const [newRule, setNewRule] = useState({ day_type: 'all' as PricingDayType, hour_start: 7, hour_end: 23, price: 200, label: '' });
   const [editPrice, setEditPrice] = useState<{ slotId: string; price: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -51,6 +55,10 @@ export default function ClubAdminCourtsPage() {
     supabase.from('courts').select('*').eq('club_id', club.id).order('id').then(({ data }) => {
       if (data) setCourts(data as Court[]);
     });
+    supabase.from('court_pricing_rules').select('*').eq('club_id', club.id)
+      .order('court_id').order('hour_start').then(({ data }) => {
+        if (data) setPricingRules(data as CourtPricingRule[]);
+      });
     supabase.from('settings').select('*').eq('club_id', club.id).then(({ data }) => {
       if (data) {
         const open = data.find((s: any) => s.key === 'open_hour');
@@ -93,6 +101,30 @@ export default function ClubAdminCourtsPage() {
     await supabase.from('courts').delete().eq('id', courtId);
     setCourts(prev => prev.filter(c => c.id !== courtId));
     setLoading(false);
+  };
+
+  const addPricingRule = async (courtId: string) => {
+    if (!club) return;
+    const { data } = await supabase.from('court_pricing_rules').insert({
+      club_id: club.id,
+      court_id: courtId,
+      label: newRule.label || `${DAY_TYPE_LABELS[newRule.day_type]} ${newRule.hour_start}:00-${newRule.hour_end}:00`,
+      day_type: newRule.day_type,
+      hour_start: newRule.hour_start,
+      hour_end: newRule.hour_end,
+      price: newRule.price,
+      priority: 0,
+    }).select().single();
+    if (data) {
+      setPricingRules(prev => [...prev, data as CourtPricingRule]);
+      setShowAddRule(null);
+      setNewRule({ day_type: 'all', hour_start: 7, hour_end: 23, price: 200, label: '' });
+    }
+  };
+
+  const deletePricingRule = async (id: string) => {
+    await supabase.from('court_pricing_rules').delete().eq('id', id);
+    setPricingRules(prev => prev.filter(r => r.id !== id));
   };
 
   const toggleSlot = async (courtId: string, hour: number, slot: Slot | undefined) => {
@@ -274,6 +306,58 @@ export default function ClubAdminCourtsPage() {
                   <div className="flex gap-2">
                     <button onClick={updateCourtRate} className="bg-[#1A1A1A] text-white px-4 py-2 rounded text-xs font-semibold">儲存</button>
                     <button onClick={() => setEditRate(null)} className="text-xs text-[#1A1A1A]/50 px-2">取消</button>
+                  </div>
+                  {/* Pricing Rules Section */}
+                  <div className="mt-3 pt-3 border-t border-[#1A1A1A]/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-[#1A1A1A]/60">定價規則</p>
+                      <button onClick={() => setShowAddRule(showAddRule === c.id ? null : c.id)}
+                        className="text-xs text-[#C4A265] hover:underline">+ 新增</button>
+                    </div>
+                    {pricingRules.filter(r => r.court_id === c.id).length === 0 && (
+                      <p className="text-xs text-[#1A1A1A]/30">未設定，使用預設價格</p>
+                    )}
+                    {pricingRules.filter(r => r.court_id === c.id).map(r => (
+                      <div key={r.id} className="flex items-center justify-between text-xs py-1">
+                        <span className="text-[#1A1A1A]/70">
+                          <span className="inline-block px-1.5 py-0.5 rounded bg-[#C4A265]/10 text-[#C4A265] font-semibold mr-1">
+                            {DAY_TYPE_LABELS[r.day_type as PricingDayType]}
+                          </span>
+                          {r.hour_start}:00-{r.hour_end}:00
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <span className="font-bold text-[#C4A265]">${r.price}</span>
+                          <button onClick={() => deletePricingRule(r.id)} className="text-red-400 hover:text-red-600">×</button>
+                        </span>
+                      </div>
+                    ))}
+                    {showAddRule === c.id && (
+                      <div className="mt-2 p-2 bg-[#FFF8F0] rounded-lg space-y-2">
+                        <select value={newRule.day_type} onChange={e => setNewRule(p => ({ ...p, day_type: e.target.value as PricingDayType }))}
+                          className="w-full px-2 py-1 border rounded text-xs">
+                          {Object.entries(DAY_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                        </select>
+                        <div className="flex gap-2">
+                          <select value={newRule.hour_start} onChange={e => setNewRule(p => ({ ...p, hour_start: +e.target.value }))}
+                            className="flex-1 px-2 py-1 border rounded text-xs">
+                            {Array.from({ length: 18 }, (_, i) => i + 6).map(h => <option key={h} value={h}>{h}:00</option>)}
+                          </select>
+                          <span className="text-xs self-center">~</span>
+                          <select value={newRule.hour_end} onChange={e => setNewRule(p => ({ ...p, hour_end: +e.target.value }))}
+                            className="flex-1 px-2 py-1 border rounded text-xs">
+                            {Array.from({ length: 18 }, (_, i) => i + 6).filter(h => h > newRule.hour_start).map(h => <option key={h} value={h}>{h}:00</option>)}
+                          </select>
+                        </div>
+                        <input type="number" value={newRule.price} onChange={e => setNewRule(p => ({ ...p, price: +e.target.value }))}
+                          className="w-full px-2 py-1 border rounded text-xs" placeholder="價格 (HKD)" />
+                        <div className="flex gap-2">
+                          <button onClick={() => addPricingRule(c.id)}
+                            className="flex-1 px-2 py-1 bg-[#C4A265] text-white rounded text-xs font-semibold">儲存</button>
+                          <button onClick={() => setShowAddRule(null)}
+                            className="px-2 py-1 text-xs text-[#1A1A1A]/50">取消</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
