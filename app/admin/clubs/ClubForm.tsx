@@ -113,8 +113,16 @@ export default function ClubForm({ initial, mode }: { initial: ClubFormValue; mo
       if (err) { setError(err.message); setSaving(false); return; }
       const newId = data?.id as string;
 
-      // Auto-create default settings rows (matches Club admin courts page expectations)
       if (newId) {
+        // Auto-create owner membership + default settings
+        // Use raw SQL via rpc to avoid RLS chicken-and-egg
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('club_memberships').insert({
+            club_id: newId, user_id: user.id, role: 'owner', status: 'approved'
+          });
+        }
+
         const rows = [
           { club_id: newId, key: 'open_hour',   value: form.settings.open_hour || '7'  },
           { club_id: newId, key: 'close_hour',  value: form.settings.close_hour || '23' },
