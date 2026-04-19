@@ -198,9 +198,33 @@ export default function AccountPage() {
   };
 
   const cancelClass = async (cbId: string, classId: string) => {
-    if (!confirm('確定取消報名？')) return;
-    await supabase.from('class_bookings').delete().eq('id', cbId);
     const cls = classBookings.find(cb => cb.id === cbId);
+    if (cls?.classes) {
+      // Check if next class is within 24 hours
+      const dayMap: Record<string, number> = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6,
+        '星期日': 0, '星期一': 1, '星期二': 2, '星期三': 3, '星期四': 4, '星期五': 5, '星期六': 6 };
+      const classDay = dayMap[cls.classes.day];
+      if (classDay !== undefined && cls.classes.time) {
+        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Hong_Kong' }));
+        const todayDay = now.getDay();
+        let daysUntil = (classDay - todayDay + 7) % 7;
+        if (daysUntil === 0) {
+          const [h, m] = cls.classes.time.split(':').map(Number);
+          const classToday = new Date(now); classToday.setHours(h, m, 0, 0);
+          if (now >= classToday) daysUntil = 7; // already passed this week
+        }
+        const nextClass = new Date(now); nextClass.setDate(nextClass.getDate() + daysUntil);
+        const [ch, cm] = cls.classes.time.split(':').map(Number);
+        nextClass.setHours(ch, cm, 0, 0);
+        const hoursUntil = (nextClass.getTime() - now.getTime()) / (1000 * 60 * 60);
+        if (hoursUntil < 24) {
+          toast('下堂課 24 小時內不可取消報名。', 'error');
+          return;
+        }
+      }
+    }
+    if (!confirm('確定取消報名？')) return;
+    await supabase.from('class_bookings').update({ status: 'cancelled' }).eq('id', cbId);
     if (cls?.classes) {
       await supabase.from('classes').update({ spots_available: cls.classes.spots_available + 1 }).eq('id', classId);
     }
