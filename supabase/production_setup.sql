@@ -242,19 +242,19 @@ CREATE POLICY "memberships_admin_delete" ON club_memberships
 
 -- Courts
 CREATE POLICY "courts_public_read" ON courts FOR SELECT USING (true);
-CREATE POLICY "courts_admin_insert" ON courts FOR INSERT WITH CHECK (is_club_admin(club_id));
-CREATE POLICY "courts_admin_update" ON courts FOR UPDATE USING (is_club_admin(club_id));
-CREATE POLICY "courts_admin_delete" ON courts FOR DELETE USING (is_club_admin(club_id));
+CREATE POLICY "courts_admin_insert" ON courts FOR INSERT WITH CHECK (is_club_admin(club_id) OR is_platform_admin());
+CREATE POLICY "courts_admin_update" ON courts FOR UPDATE USING (is_club_admin(club_id) OR is_platform_admin());
+CREATE POLICY "courts_admin_delete" ON courts FOR DELETE USING (is_club_admin(club_id) OR is_platform_admin());
 
 -- Court Slots
 CREATE POLICY "slots_public_read" ON court_slots FOR SELECT USING (true);
-CREATE POLICY "slots_member_insert" ON court_slots FOR INSERT WITH CHECK (is_approved_member(club_id));
-CREATE POLICY "slots_member_update" ON court_slots FOR UPDATE USING (is_approved_member(club_id) OR is_club_admin(club_id));
-CREATE POLICY "slots_admin_delete" ON court_slots FOR DELETE USING (is_club_admin(club_id));
+CREATE POLICY "slots_member_insert" ON court_slots FOR INSERT WITH CHECK (is_approved_member(club_id) OR is_platform_admin());
+CREATE POLICY "slots_member_update" ON court_slots FOR UPDATE USING (is_approved_member(club_id) OR is_club_admin(club_id) OR is_platform_admin());
+CREATE POLICY "slots_admin_delete" ON court_slots FOR DELETE USING (is_club_admin(club_id) OR is_platform_admin());
 
 -- Classes
 CREATE POLICY "classes_public_read" ON classes FOR SELECT USING (visible = true);
-CREATE POLICY "classes_admin_all" ON classes FOR ALL USING (is_club_admin(club_id));
+CREATE POLICY "classes_admin_all" ON classes FOR ALL USING (is_club_admin(club_id) OR is_platform_admin());
 
 -- Bookings
 CREATE POLICY "bookings_own_read" ON bookings FOR SELECT USING (auth.uid() = user_id OR is_club_admin(club_id));
