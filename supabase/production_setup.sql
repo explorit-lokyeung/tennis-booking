@@ -81,7 +81,7 @@ ALTER TABLE courts ENABLE ROW LEVEL SECURITY;
 CREATE INDEX IF NOT EXISTS courts_club_idx ON courts(club_id);
 
 -- 4. Court Slots
-CREATE TABLE IF NOT EXISTS court_slots (
+CREATE TABLE IF NOT EXISTS slots (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   club_id UUID NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
   court_id TEXT NOT NULL REFERENCES courts(id) ON DELETE CASCADE,
@@ -93,12 +93,12 @@ CREATE TABLE IF NOT EXISTS court_slots (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(court_id, date, hour)
 );
-ALTER TABLE court_slots ENABLE ROW LEVEL SECURITY;
-CREATE INDEX IF NOT EXISTS slots_club_idx ON court_slots(club_id);
-CREATE INDEX IF NOT EXISTS slots_court_date_idx ON court_slots(court_id, date);
+ALTER TABLE slots ENABLE ROW LEVEL SECURITY;
+CREATE INDEX IF NOT EXISTS slots_club_idx ON slots(club_id);
+CREATE INDEX IF NOT EXISTS slots_court_date_idx ON slots(court_id, date);
 
 -- Legacy alias (some code references "slots" table)
--- CREATE VIEW slots AS SELECT * FROM court_slots;
+-- CREATE VIEW slots AS SELECT * FROM slots;
 
 -- 5. Classes
 CREATE TABLE IF NOT EXISTS classes (
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   club_id UUID NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  slot_id UUID REFERENCES court_slots(id),
+  slot_id UUID REFERENCES slots(id),
   court_id TEXT REFERENCES courts(id),
   date DATE NOT NULL,
   hour INT NOT NULL,
@@ -247,10 +247,10 @@ CREATE POLICY "courts_admin_update" ON courts FOR UPDATE USING (is_club_admin(cl
 CREATE POLICY "courts_admin_delete" ON courts FOR DELETE USING (is_club_admin(club_id) OR is_platform_admin());
 
 -- Court Slots
-CREATE POLICY "slots_public_read" ON court_slots FOR SELECT USING (true);
-CREATE POLICY "slots_member_insert" ON court_slots FOR INSERT WITH CHECK (is_approved_member(club_id) OR is_platform_admin());
-CREATE POLICY "slots_member_update" ON court_slots FOR UPDATE USING (is_approved_member(club_id) OR is_club_admin(club_id) OR is_platform_admin());
-CREATE POLICY "slots_admin_delete" ON court_slots FOR DELETE USING (is_club_admin(club_id) OR is_platform_admin());
+CREATE POLICY "slots_public_read" ON slots FOR SELECT USING (true);
+CREATE POLICY "slots_member_insert" ON slots FOR INSERT WITH CHECK (is_approved_member(club_id) OR is_platform_admin());
+CREATE POLICY "slots_member_update" ON slots FOR UPDATE USING (is_approved_member(club_id) OR is_club_admin(club_id) OR is_platform_admin());
+CREATE POLICY "slots_admin_delete" ON slots FOR DELETE USING (is_club_admin(club_id) OR is_platform_admin());
 
 -- Classes
 CREATE POLICY "classes_public_read" ON classes FOR SELECT USING (visible = true);

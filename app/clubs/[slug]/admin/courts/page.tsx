@@ -41,7 +41,7 @@ export default function ClubAdminCourtsPage() {
   const [pricingRules, setPricingRules] = useState<CourtPricingRule[]>([]);
   const [showAddRule, setShowAddRule] = useState<string | null>(null); // court_id
   const [newRule, setNewRule] = useState({ day_type: 'all' as PricingDayType, hour_start: 7, hour_end: 23, price: 200, label: '' });
-  const [editPrice, setEditPrice] = useState<{ slotId: string; price: string } | null>(null);
+  const [editPrice, setEditPrice] = useState<{ courtId: string; hour: number; courtName: string; currentPrice: number; newPrice: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   const dates = Array.from({ length: 14 }, (_, i) => {
@@ -173,10 +173,17 @@ export default function ClubAdminCourtsPage() {
   };
 
   const updateSlotPrice = async () => {
-    if (!editPrice) return;
-    const price = editPrice.price ? parseInt(editPrice.price) : null;
-    await supabase.from('slots').update({ price }).eq('id', editPrice.slotId);
-    await fetchSlots(); setEditPrice(null);
+    if (!editPrice || !club) return;
+    const price = editPrice.newPrice ? parseInt(editPrice.newPrice) : null;
+    // Find or create the slot
+    const existing = slots.find(s => s.court_id === editPrice.courtId && s.hour === editPrice.hour);
+    if (existing) {
+      await supabase.from('slots').update({ price }).eq('id', existing.id);
+    } else {
+      await supabase.from('slots').insert({ club_id: club.id, court_id: editPrice.courtId, date: dateStr, hour: editPrice.hour, status: 'booked', price });
+    }
+    await fetchSlots();
+    setEditPrice(null);
   };
 
   const getSlot = (courtId: string, hour: number) => slots.find(s => s.court_id === courtId && s.hour === hour);
@@ -559,16 +566,7 @@ export default function ClubAdminCourtsPage() {
                             {isAvailable ? `$${price} ✓` : '關閉'}
                           </button>
                           {isAvailable && (
-                            editPrice?.slotId === `${c.id}-${h}` ? (
-                              <div className="flex gap-1">
-                                <input type="number" value={editPrice.price} onChange={e => setEditPrice({ ...editPrice, price: e.target.value })}
-                                  className="w-16 px-1 py-0.5 border rounded text-xs" placeholder={`${c.hourly_rate}`} />
-                                <button onClick={updateSlotPrice} className="text-xs text-[#C4A265]">✓</button>
-                                <button onClick={() => setEditPrice(null)} className="text-xs text-red-500">✗</button>
-                              </div>
-                            ) : (
-                              <button onClick={() => setEditPrice({ slotId: `${c.id}-${h}`, price: '' })} className="text-[10px] text-[#1A1A1A]/30 hover:text-[#C4A265]">改價</button>
-                            )
+                              <button onClick={() => setEditPrice({ courtId: c.id, hour: h, courtName: c.name, currentPrice: price, newPrice: '' })} className="text-[10px] text-[#1A1A1A]/30 hover:text-[#C4A265]">改價</button>
                           )}
                         </div>
                       )}
@@ -580,6 +578,30 @@ export default function ClubAdminCourtsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Slot Price Edit Modal */}
+      {editPrice && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setEditPrice(null)}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-[#1A1A1A] mb-2">修改時段價格</h3>
+            <p className="text-sm text-[#1A1A1A]/50 mb-4">
+              {editPrice.courtName} · {dateStr} · {fmtHour(editPrice.hour)}
+            </p>
+            <p className="text-xs text-[#1A1A1A]/40 mb-2">現行價格：${editPrice.currentPrice}/小時</p>
+            <div>
+              <label className="text-sm font-semibold text-[#1A1A1A]/60 block mb-1">新價格 (HKD)</label>
+              <input type="number" value={editPrice.newPrice} onChange={e => setEditPrice({ ...editPrice, newPrice: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg text-sm" placeholder={String(editPrice.currentPrice)} autoFocus />
+            </div>
+            <div className="flex gap-3 mt-4">
+              <button onClick={updateSlotPrice}
+                className="flex-1 px-4 py-2.5 bg-[#C4A265] text-white rounded-xl text-sm font-semibold hover:bg-[#b08d4f]">儲存</button>
+              <button onClick={() => setEditPrice(null)}
+                className="px-4 py-2.5 bg-gray-100 rounded-xl text-sm hover:bg-gray-200">取消</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

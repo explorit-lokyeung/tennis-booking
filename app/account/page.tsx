@@ -191,7 +191,7 @@ export default function AccountPage() {
     // Soft delete: update status instead of deleting
     await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId);
     // Release the slot back to available
-    await supabase.from('court_slots').update({ status: 'available', booked_by: null }).eq('id', slotId);
+    await supabase.from('slots').update({ status: 'available', booked_by: null }).eq('id', slotId);
     setBookings(prev => prev.filter(b => b.id !== bookingId));
     setSelected(null);
     toast('已取消預約');
