@@ -25,6 +25,15 @@ CREATE TABLE IF NOT EXISTS clubs (
 );
 ALTER TABLE clubs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public can view active clubs" ON clubs FOR SELECT USING (is_active = true);
+CREATE POLICY "platform_admin_insert_clubs" ON clubs FOR INSERT WITH CHECK (
+  (SELECT raw_user_meta_data->>'role' FROM auth.users WHERE id = auth.uid()) = 'platform_admin'
+);
+CREATE POLICY "platform_admin_update_clubs" ON clubs FOR UPDATE USING (
+  (SELECT raw_user_meta_data->>'role' FROM auth.users WHERE id = auth.uid()) = 'platform_admin'
+);
+CREATE POLICY "platform_admin_delete_clubs" ON clubs FOR DELETE USING (
+  (SELECT raw_user_meta_data->>'role' FROM auth.users WHERE id = auth.uid()) = 'platform_admin'
+);
 CREATE INDEX IF NOT EXISTS clubs_slug_idx ON clubs(slug);
 CREATE INDEX IF NOT EXISTS clubs_active_idx ON clubs(is_active);
 
