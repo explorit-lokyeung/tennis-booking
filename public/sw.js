@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tennis-v3';
+const CACHE_NAME = 'tennis-v4';
 const SHELL = [
   '/',
   '/clubs',

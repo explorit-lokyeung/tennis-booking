@@ -3,9 +3,23 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useI18n } from '@/lib/i18n';
 import { isPlatformAdmin } from '@/lib/platform';
 import { usePathname } from 'next/navigation';
 import NotificationBell from './NotificationBell';
+
+function LangToggle() {
+  const { locale, setLocale } = useI18n();
+  return (
+    <button
+      onClick={() => setLocale(locale === 'zh' ? 'en' : 'zh')}
+      className="text-xs font-semibold text-[#1A1A1A]/50 hover:text-[#C4A265] transition-colors px-2 py-1 rounded border border-[#1A1A1A]/10"
+      title={locale === 'zh' ? 'Switch to English' : '切換中文'}
+    >
+      {locale === 'zh' ? 'EN' : '中'}
+    </button>
+  );
+}
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -38,6 +52,7 @@ export default function Header() {
               </Link>
             )}
             {user && <NotificationBell userId={user.id} />}
+            <LangToggle />
             {user ? (
               <Link href="/account" className="text-sm font-medium tracking-wide text-[#1A1A1A] hover:text-[#C4A265] transition-colors uppercase">
                 {user.user_metadata?.name || user.email?.split('@')[0] || '帳戶'}

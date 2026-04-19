@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/lib/auth-context";
+import { I18nProvider } from "@/lib/i18n";
 import MobileNav from '@/components/MobileNav';
 import ScrollToTop from '@/components/ScrollToTop';
 import { ToastProvider } from '@/components/Toast';
@@ -46,6 +47,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased bg-[#FFF8F0] scroll-smooth`}
     >
       <body className="min-h-full flex flex-col bg-[#FFF8F0]">
+        <I18nProvider>
         <AuthProvider>
           <Header />
           <ToastProvider><main className="flex-1 pb-16 md:pb-0">{children}</main></ToastProvider>
@@ -53,6 +55,7 @@ export default function RootLayout({
           <MobileNav />
           <ScrollToTop />
         </AuthProvider>
+        </I18nProvider>
               <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js');
