@@ -35,6 +35,8 @@ export default function ClubAdminCourtsPage() {
   const [weekPage, setWeekPage] = useState(0);
   const [mobileCourt, setMobileCourt] = useState(0);
   const [editRate, setEditRate] = useState<EditRate | null>(null);
+  const [showNewCourt, setShowNewCourt] = useState(false);
+  const [newCourt, setNewCourt] = useState({ name: '', surface: 'hard', indoor: false, hourly_rate: 200 });
   const [editPrice, setEditPrice] = useState<{ slotId: string; price: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -64,6 +66,33 @@ export default function ClubAdminCourtsPage() {
     if (!club) return;
     const { data } = await supabase.from('slots').select('*').eq('club_id', club.id).eq('date', dateStr);
     if (data) setSlots(data as Slot[]);
+  };
+
+  const createCourt = async () => {
+    if (!club || !newCourt.name.trim()) return;
+    setLoading(true);
+    const { error } = await supabase.from('courts').insert({
+      club_id: club.id,
+      name: newCourt.name.trim(),
+      surface: newCourt.surface,
+      indoor: newCourt.indoor,
+      hourly_rate: newCourt.hourly_rate,
+    });
+    if (!error) {
+      const { data } = await supabase.from('courts').select('*').eq('club_id', club.id).order('id');
+      if (data) setCourts(data as Court[]);
+      setNewCourt({ name: '', surface: 'hard', indoor: false, hourly_rate: 200 });
+      setShowNewCourt(false);
+    }
+    setLoading(false);
+  };
+
+  const deleteCourt = async (courtId: string, courtName: string) => {
+    if (!confirm(`確定刪除「${courtName}」？此操作不可撤銷。`)) return;
+    setLoading(true);
+    await supabase.from('courts').delete().eq('id', courtId);
+    setCourts(prev => prev.filter(c => c.id !== courtId));
+    setLoading(false);
   };
 
   const toggleSlot = async (courtId: string, hour: number, slot: Slot | undefined) => {
@@ -142,6 +171,12 @@ export default function ClubAdminCourtsPage() {
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h1 className="text-2xl font-bold text-[#1A1A1A]">場地及時段管理</h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button onClick={() => setShowNewCourt(true)}
+            className="px-4 py-2 bg-[#C4A265] text-white rounded-xl text-sm font-semibold hover:bg-[#b08d4f] transition-colors">
+            + 新增球場
+          </button>
+        </div>
         <div className="flex items-center gap-2 bg-white rounded-xl shadow-sm px-4 py-2">
           <span className="text-sm text-[#1A1A1A]/60">開放時間</span>
           <select value={opHours.open} onChange={(e) => {
@@ -157,6 +192,50 @@ export default function ClubAdminCourtsPage() {
           </select>
         </div>
       </div>
+
+      {/* New Court Modal */}
+      {showNewCourt && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowNewCourt(false)}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-[#1A1A1A] mb-4">新增球場</h2>
+            <div className="space-y-3">
+              <input type="text" placeholder="球場名稱（例：Court 1）" value={newCourt.name}
+                onChange={e => setNewCourt(p => ({ ...p, name: e.target.value }))}
+                className="w-full px-3 py-2 border rounded-lg text-sm" autoFocus />
+              <select value={newCourt.surface} onChange={e => setNewCourt(p => ({ ...p, surface: e.target.value }))}
+                className="w-full px-3 py-2 border rounded-lg text-sm">
+                <option value="hard">硬地</option>
+                <option value="clay">泥地</option>
+                <option value="grass">草地</option>
+                <option value="carpet">地毯</option>
+              </select>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={newCourt.indoor}
+                    onChange={e => setNewCourt(p => ({ ...p, indoor: e.target.checked }))} />
+                  室內
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  每小時 $
+                  <input type="number" value={newCourt.hourly_rate}
+                    onChange={e => setNewCourt(p => ({ ...p, hourly_rate: +e.target.value }))}
+                    className="w-20 px-2 py-1 border rounded text-sm" />
+                </label>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={createCourt} disabled={loading || !newCourt.name.trim()}
+                  className="flex-1 px-4 py-2 bg-[#C4A265] text-white rounded-lg text-sm font-semibold hover:bg-[#b08d4f] disabled:opacity-50">
+                  建立
+                </button>
+                <button onClick={() => setShowNewCourt(false)}
+                  className="px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">
+                  取消
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
         <h2 className="font-bold text-[#1A1A1A] mb-3">球場預設價格</h2>
@@ -198,6 +277,7 @@ export default function ClubAdminCourtsPage() {
                   </div>
                 </div>
               ) : (
+                <div>
                 <button onClick={() => setEditRate({ id: c.id, rate: c.hourly_rate, name: c.name, location: c.location || '', address: c.address || '', description: c.description || '', facilities: c.facilities || '', indoor: c.indoor || false, visibility: (c.visibility || 'public') as Visibility, image_url: (c as any).image_url || '' })} className="w-full text-left">
                   <p className="font-bold text-[#1A1A1A] text-base">{c.name}</p>
                   <p className="text-[#C4A265] font-bold text-lg">${c.hourly_rate}<span className="text-xs text-[#1A1A1A]/40 font-normal">/小時</span></p>
@@ -206,6 +286,11 @@ export default function ClubAdminCourtsPage() {
                     {c.indoor ? ' · 室內' : ' · 室外'}
                   </p>
                 </button>
+                <button onClick={(e) => { e.stopPropagation(); deleteCourt(c.id, c.name); }}
+                  className="mt-2 text-xs text-red-400 hover:text-red-600 transition-colors">
+                  刪除球場
+                </button>
+                </div>
               )}
             </div>
           ))}
