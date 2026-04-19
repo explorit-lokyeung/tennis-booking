@@ -210,13 +210,31 @@ RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE AS $$
   );
 $$;
 
+-- Helper: check if user is platform admin
+CREATE OR REPLACE FUNCTION is_platform_admin()
+RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM auth.users
+    WHERE id = auth.uid()
+      AND raw_user_meta_data->>'role' = 'platform_admin'
+  );
+$$;
+
+-- Clubs
+CREATE POLICY "platform_admin_insert_clubs" ON clubs
+  FOR INSERT WITH CHECK (is_platform_admin());
+CREATE POLICY "platform_admin_update_clubs" ON clubs
+  FOR UPDATE USING (is_platform_admin());
+CREATE POLICY "platform_admin_delete_clubs" ON clubs
+  FOR DELETE USING (is_platform_admin());
+
 -- Club Memberships
 CREATE POLICY "memberships_select_self_or_admin" ON club_memberships
   FOR SELECT USING (auth.uid() = user_id OR is_club_admin(club_id));
 CREATE POLICY "memberships_insert_self_pending" ON club_memberships
   FOR INSERT WITH CHECK (auth.uid() = user_id AND status = 'pending' AND role = 'member');
 CREATE POLICY "memberships_admin_insert" ON club_memberships
-  FOR INSERT WITH CHECK (is_club_admin(club_id));
+  FOR INSERT WITH CHECK (is_club_admin(club_id) OR is_platform_admin());
 CREATE POLICY "memberships_admin_update" ON club_memberships
   FOR UPDATE USING (is_club_admin(club_id));
 CREATE POLICY "memberships_admin_delete" ON club_memberships
@@ -252,7 +270,7 @@ CREATE POLICY "cb_admin_delete" ON class_bookings FOR DELETE USING (is_club_admi
 
 -- Settings
 CREATE POLICY "settings_public_read" ON settings FOR SELECT USING (true);
-CREATE POLICY "settings_admin_all" ON settings FOR ALL USING (is_club_admin(club_id));
+CREATE POLICY "settings_admin_all" ON settings FOR ALL USING (is_club_admin(club_id) OR is_platform_admin());
 
 -- Notifications
 CREATE POLICY "notif_own_read" ON notifications FOR SELECT USING (auth.uid() = user_id);
