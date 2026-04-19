@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { useClub, useMembership, hasRole } from '@/lib/club';
+import { isPlatformAdmin } from '@/lib/platform';
 
 export default function ClubAdminLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -29,8 +30,12 @@ export default function ClubAdminLayout({ children }: { children: React.ReactNod
     if (!club) return;
     if (!user) { router.push('/login'); return; }
     // Wait for membership to settle — first render may have null before data arrives
-    if (!mbReady && membership === null) return;
-    if (!hasRole(membership, 'admin', 'owner')) { router.push(`/clubs/${slug}`); return; }
+    if (!mbReady && membership === null) {
+      // Platform admin bypass — don't wait for membership
+      if (isPlatformAdmin(user)) { setChecked(true); return; }
+      return;
+    }
+    if (!hasRole(membership, 'admin', 'owner') && !isPlatformAdmin(user)) { router.push(`/clubs/${slug}`); return; }
     setChecked(true);
   }, [authLoading, clubLoading, mbLoading, user, membership, slug, router, club, mbReady]);
 
