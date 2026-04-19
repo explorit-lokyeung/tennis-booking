@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
+import { validateEmail, validatePassword } from '@/lib/validation';
 
 export default function LoginPage() {
   const [tab, setTab] = useState<'login' | 'register'>('login');
@@ -23,6 +24,14 @@ export default function LoginPage() {
       setError('Please fill in all required fields.');
       setLoading(false);
       return;
+    }
+
+    const emailErr = validateEmail(form.email);
+    if (emailErr) { setError(emailErr); setLoading(false); return; }
+
+    if (tab === 'register') {
+      const pwErr = validatePassword(form.password);
+      if (pwErr) { setError(pwErr); setLoading(false); return; }
     }
 
     if (tab === 'register' && !form.name) {

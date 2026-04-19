@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useClub } from '@/lib/club';
+import { useAuth } from '@/lib/auth-context';
+import { logAudit } from '@/lib/audit';
 import type { ClubMembership, MembershipRole, MembershipStatus } from '@/lib/types';
 
 type MemberRow = ClubMembership & {
@@ -28,6 +30,7 @@ export default function ClubAdminMembersPage() {
   const params = useParams();
   const slug = params?.slug as string;
   const { club } = useClub(slug);
+  const { user } = useAuth();
 
   const [rows, setRows] = useState<MemberRow[]>([]);
   const [filter, setFilter] = useState<MembershipStatus | 'all'>('pending');
@@ -64,11 +67,13 @@ export default function ClubAdminMembersPage() {
 
   const updateStatus = async (id: string, status: MembershipStatus) => {
     await supabase.from('club_memberships').update({ status }).eq('id', id);
+    if (club && user) logAudit(club.id, user.id, `會員狀態變更: ${status}`, `membership_id: ${id}`);
     fetchMembers();
   };
 
   const updateRole = async (id: string, role: MembershipRole) => {
     await supabase.from('club_memberships').update({ role }).eq('id', id);
+    if (club && user) logAudit(club.id, user.id, `會員角色變更: ${role}`, `membership_id: ${id}`);
     fetchMembers();
   };
 
