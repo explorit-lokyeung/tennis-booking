@@ -19,8 +19,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TENNIS CLUB",
-  description: "Book tennis classes and courts at our premium tennis club",
+  title: {
+    default: '網球平台 — 香港網球場預約系統',
+    template: '%s | 網球平台',
+  },
+  description: '香港多個網球會一站式預約平台。球場預約、課程報名、會籍管理，一個帳戶搞定。',
+  keywords: ['網球', '網球場', '預約', '香港', '網球課程', 'tennis', 'booking', 'court', 'Hong Kong'],
+  openGraph: {
+    type: 'website',
+    locale: 'zh_HK',
+    siteName: '網球平台',
+    title: '網球平台 — 香港網球場預約系統',
+    description: '香港多個網球會一站式預約平台',
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({

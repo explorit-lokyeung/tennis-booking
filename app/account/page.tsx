@@ -178,10 +178,20 @@ export default function AccountPage() {
     toast('已更新個人資料');
   };
 
-  const cancelBooking = async (bookingId: string, slotId: string) => {
+  const cancelBooking = async (bookingId: string, slotId: string, date: string, hour: number) => {
+    // Check cancel deadline (2 hours before)
+    const slotTime = new Date(`${date}T${String(hour).padStart(2,'0')}:00:00+08:00`);
+    const now = new Date();
+    const hoursUntil = (slotTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (hoursUntil < 2) {
+      toast('開始前 2 小時內不可取消預約。', 'error');
+      return;
+    }
     if (!confirm('確定取消此預約？')) return;
-    await supabase.from('bookings').delete().eq('id', bookingId);
-    await supabase.from('slots').delete().eq('id', slotId);
+    // Soft delete: update status instead of deleting
+    await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId);
+    // Release the slot back to available
+    await supabase.from('court_slots').update({ status: 'available', booked_by: null }).eq('id', slotId);
     setBookings(prev => prev.filter(b => b.id !== bookingId));
     setSelected(null);
     toast('已取消預約');
@@ -606,7 +616,7 @@ export default function AccountPage() {
                   <button
                     onClick={() => {
                       const b = selected.raw as BookingRow;
-                      cancelBooking(b.id, b.slot_id);
+                      cancelBooking(b.id, b.slot_id, b.date, b.hour);
                     }}
                     className="flex-1 bg-red-500 text-white py-2.5 rounded-full font-bold uppercase tracking-wider text-xs hover:bg-red-600 transition-all"
                   >
