@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { notifyClubAdmins } from '@/lib/notify';
 import { useAuth } from '@/lib/auth-context';
 import { useClub, useMembership, isClubAdmin, isApprovedMember } from '@/lib/club';
 import { getClubCourts, getClubClasses } from '@/lib/queries';
@@ -46,6 +47,8 @@ export default function ClubHomepage() {
       setJoinMsg('申請失敗：' + error.message);
     } else {
       setJoinMsg(role === 'coach' ? '教練申請已提交，等待審批' : '申請已提交，等待審批');
+      // Notify club admins
+      notifyClubAdmins(club.id, '新會員申請', `${user.email} 申請加入（${role === 'coach' ? '教練' : '會員'})）`, 'membership');
     }
   };
 

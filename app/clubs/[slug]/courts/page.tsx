@@ -8,6 +8,7 @@ import { useToast } from '@/components/Toast';
 import { MapPin } from 'lucide-react';
 import SuccessAnimation from '@/components/SuccessAnimation';
 import { supabase } from '@/lib/supabase';
+import { notify } from '@/lib/notify';
 import { useAuth } from '@/lib/auth-context';
 import { useClub, useMembership, isApprovedMember } from '@/lib/club';
 import { getBookingPolicy, isWithinAdvanceWindow, getUserDayBookingCount, DEFAULT_POLICY, type BookingPolicy } from '@/lib/policy';
@@ -172,6 +173,9 @@ export default function ClubCourtsPage() {
       }));
       const { error: bookingError } = await supabase.from('bookings').insert(bookingRows);
       if (bookingError) { setError('預約失敗，請稍後再試。'); setLoading(false); return; }
+      // Notify user
+      const courtName = courts.find(c => c.id === selections[0]?.courtId)?.name || '';
+      notify(club.id, user.id, '預約確認', `你已成功預約 ${courtName} ${dateStr} ${selections.map(s => `${s.hour}:00`).join(', ')}`, 'booking');
       setBooked(true);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);

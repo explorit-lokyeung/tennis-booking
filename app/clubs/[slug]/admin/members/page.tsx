@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useClub } from '@/lib/club';
 import { useAuth } from '@/lib/auth-context';
 import { logAudit } from '@/lib/audit';
+import { notify } from '@/lib/notify';
 import type { ClubMembership, MembershipRole, MembershipStatus } from '@/lib/types';
 
 type MemberRow = ClubMembership & {
@@ -68,6 +69,16 @@ export default function ClubAdminMembersPage() {
   const updateStatus = async (id: string, status: MembershipStatus) => {
     await supabase.from('club_memberships').update({ status }).eq('id', id);
     if (club && user) logAudit(club.id, user.id, `會員狀態變更: ${status}`, `membership_id: ${id}`);
+    // Notify the member
+    const member = rows.find(m => m.id === id);
+    if (club && member) {
+      const msgs: Record<string, string> = {
+        approved: '你的會員申請已獲批准',
+        rejected: '你的會員申請已被拒絕',
+        suspended: '你的會員資格已被停用',
+      };
+      if (msgs[status]) notify(club.id, member.user_id, msgs[status], `${club.name}`, 'membership');
+    }
     fetchMembers();
   };
 

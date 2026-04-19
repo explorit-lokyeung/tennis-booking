@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 import SuccessAnimation from '@/components/SuccessAnimation';
 import { supabase } from '@/lib/supabase';
+import { notify } from '@/lib/notify';
 import { useAuth } from '@/lib/auth-context';
 import { useClub, useMembership, isApprovedMember } from '@/lib/club';
 import type { TennisClass, Visibility } from '@/lib/types';
@@ -63,6 +64,7 @@ export default function ClubClassDetailPage() {
       }
       setEnrolled(true); setEnrolling(false);
       setError('名額已滿，已加入等候名單。有人取消時會自動通知你。');
+      notify(club.id, user.id, '已加入等候名單', `你已加入「${cls.name}」的等候名單`, 'class');
       return;
     }
 
@@ -80,6 +82,7 @@ export default function ClubClassDetailPage() {
     setEnrolling(false);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 2500);
+    notify(club.id, user.id, '課程報名確認', `你已成功報名「${cls.name}」`, 'class');
   };
 
   const handleCancel = async () => {

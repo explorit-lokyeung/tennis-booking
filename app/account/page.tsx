@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase';
+import { notify } from '@/lib/notify';
 import type { Club, ClubMembership } from '@/lib/types';
 
 interface BookingRow {
@@ -195,6 +196,8 @@ export default function AccountPage() {
     setBookings(prev => prev.filter(b => b.id !== bookingId));
     setSelected(null);
     toast('已取消預約');
+    // Notify user
+    if (user) notify(bookings.find(b => b.id === bookingId)?.club_id || '', user.id, '預約已取消', `${date} ${hour}:00 的預約已取消`, 'booking');
   };
 
   const cancelClass = async (cbId: string, classId: string) => {
@@ -231,6 +234,7 @@ export default function AccountPage() {
     setClassBookings(prev => prev.filter(cb => cb.id !== cbId));
     setSelected(null);
     toast('已取消報名');
+    if (user && cls?.classes) notify(cls.club_id, user.id, '課程報名已取消', `「${cls.classes.name}」的報名已取消`, 'class');
   };
 
   const clubOptions = useMemo(() => {
