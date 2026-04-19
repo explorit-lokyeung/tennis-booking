@@ -92,6 +92,21 @@ export interface Booking {
   created_at: string;
 }
 
+export type PricingDayType = 'weekday' | 'weekend' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun' | 'holiday' | 'all';
+
+export interface CourtPricingRule {
+  id: string;
+  club_id: string;
+  court_id: string;
+  label: string;
+  day_type: PricingDayType;
+  hour_start: number;
+  hour_end: number;
+  price: number;
+  priority: number;
+  created_at: string;
+}
+
 export interface ClassBooking {
   id: string;
   club_id: string;

@@ -54,6 +54,7 @@ export default function ClubAdminLayout({ children }: { children: React.ReactNod
     { href: `${base}/classes`, label: '課程管理' },
     { href: `${base}/members`, label: '會員管理' },
     { href: `${base}/analytics`, label: '數據分析' },
+    { href: `${base}/pricing`, label: '定價管理' },
     { href: `${base}/settings`, label: '預約規則' },
   ];
 
