@@ -19,6 +19,7 @@ type EditRate = {
   facilities?: string;
   indoor?: boolean;
   visibility?: Visibility;
+  image_url?: string;
 };
 
 export default function ClubAdminCourtsPage() {
@@ -103,6 +104,7 @@ export default function ClubAdminCourtsPage() {
       facilities: editRate.facilities || '',
       indoor: editRate.indoor || false,
       visibility: editRate.visibility || 'public',
+      image_url: editRate.image_url || null,
     };
     await supabase.from('courts').update(updates).eq('id', editRate.id);
     setCourts(prev => prev.map(c => c.id === editRate.id ? { ...c, ...updates } : c));
@@ -187,13 +189,16 @@ export default function ClubAdminCourtsPage() {
                     <input type="checkbox" checked={editRate.indoor || false} onChange={e => setEditRate({ ...editRate, indoor: e.target.checked })} />
                     室內場地
                   </label>
+                  <input type="url" value={editRate.image_url || ''} onChange={e => setEditRate({ ...editRate, image_url: e.target.value })}
+                    className="w-full px-3 py-2 border rounded text-sm bg-white" placeholder="球場圖片 URL" />
+                  {editRate.image_url && <img src={editRate.image_url} alt="preview" className="w-full h-24 object-cover rounded" />}
                   <div className="flex gap-2">
                     <button onClick={updateCourtRate} className="bg-[#1A1A1A] text-white px-4 py-2 rounded text-xs font-semibold">儲存</button>
                     <button onClick={() => setEditRate(null)} className="text-xs text-[#1A1A1A]/50 px-2">取消</button>
                   </div>
                 </div>
               ) : (
-                <button onClick={() => setEditRate({ id: c.id, rate: c.hourly_rate, name: c.name, location: c.location || '', address: c.address || '', description: c.description || '', facilities: c.facilities || '', indoor: c.indoor || false, visibility: (c.visibility || 'public') as Visibility })} className="w-full text-left">
+                <button onClick={() => setEditRate({ id: c.id, rate: c.hourly_rate, name: c.name, location: c.location || '', address: c.address || '', description: c.description || '', facilities: c.facilities || '', indoor: c.indoor || false, visibility: (c.visibility || 'public') as Visibility, image_url: (c as any).image_url || '' })} className="w-full text-left">
                   <p className="font-bold text-[#1A1A1A] text-base">{c.name}</p>
                   <p className="text-[#C4A265] font-bold text-lg">${c.hourly_rate}<span className="text-xs text-[#1A1A1A]/40 font-normal">/小時</span></p>
                   <p className="text-xs text-[#1A1A1A]/50 mt-1">

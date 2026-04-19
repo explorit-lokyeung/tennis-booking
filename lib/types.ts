@@ -46,6 +46,7 @@ export interface Court {
   address: string | null;
   facilities: string | null;
   surface_type: string | null;
+  image_url?: string | null;
   visibility?: Visibility;
 }
 

@@ -65,6 +65,26 @@ export default function CoachDashboard() {
     return out;
   }, [memberships]);
 
+  // Build weekly schedule grid
+  const dayOrder = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日',
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const weekSchedule = useMemo(() => {
+    const days = ['一', '二', '三', '四', '五', '六', '日'];
+    const dayMap: Record<string, string> = {
+      '星期一': '一', '星期二': '二', '星期三': '三', '星期四': '四', '星期五': '五', '星期六': '六', '星期日': '日',
+      'Monday': '一', 'Tuesday': '二', 'Wednesday': '三', 'Thursday': '四', 'Friday': '五', 'Saturday': '六', 'Sunday': '日',
+    };
+    const grid: Record<string, typeof classes> = {};
+    days.forEach(d => grid[d] = []);
+    classes.forEach(c => {
+      const d = dayMap[c.day];
+      if (d) grid[d].push(c);
+    });
+    // Sort by time
+    days.forEach(d => grid[d].sort((a, b) => (a.time || '').localeCompare(b.time || '')));
+    return { days, grid };
+  }, [classes]);
+
   if (authLoading || loading) return <main className="min-h-screen bg-[#FFF8F0]" />;
 
   if (!user) return null;
@@ -108,6 +128,29 @@ export default function CoachDashboard() {
           <div className="bg-white rounded-2xl shadow-sm p-5">
             <p className="text-xs text-[#1A1A1A]/50 uppercase tracking-wide">總名額</p>
             <p className="text-3xl font-bold text-[#1A1A1A] mt-1">{totalSlots}</p>
+          </div>
+        </div>
+
+        {/* Weekly Schedule */}
+        <div className="bg-white rounded-2xl shadow-sm p-5 mb-8">
+          <h2 className="text-lg font-bold text-[#1A1A1A] mb-4">週間行程</h2>
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {weekSchedule.days.map(d => (
+              <div key={d}>
+                <p className="text-xs font-bold text-[#1A1A1A]/50 mb-2">星期{d}</p>
+                {weekSchedule.grid[d].length === 0 ? (
+                  <div className="h-16 bg-[#FFF8F0] rounded-lg flex items-center justify-center">
+                    <span className="text-[10px] text-[#1A1A1A]/20">—</span>
+                  </div>
+                ) : weekSchedule.grid[d].map(c => (
+                  <div key={c.id} className="bg-[#C4A265]/10 rounded-lg p-1.5 mb-1">
+                    <p className="text-[10px] font-bold text-[#1A1A1A] truncate">{c.name}</p>
+                    <p className="text-[9px] text-[#1A1A1A]/50">{c.time}</p>
+                    <p className="text-[9px] text-[#C4A265]">{bySlug[c.club_id]?.name}</p>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
 
