@@ -60,22 +60,22 @@ export default function ClubAdminLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-[#FFF8F0]">
       <nav className="bg-[#1A1A1A] text-[#FFF8F0] shadow-lg">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
-              <Link href={`/clubs/${slug}`} className="text-xl font-bold">{club?.name || '球會'}</Link>
-              <div className="flex gap-4 overflow-x-auto">
-                {tabs.map(t => (
-                  <Link key={t.href} href={t.href}
-                    className={`px-4 py-2 rounded-lg transition-all whitespace-nowrap text-sm ${
-                      pathname === t.href ? 'bg-[#C4A265] text-white' : 'hover:bg-white/10'
-                    }`}>
-                    {t.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            <Link href={`/clubs/${slug}`} className="text-sm px-4 py-2 rounded-lg hover:bg-white/10 transition-all">離開</Link>
+        <div className="max-w-7xl mx-auto px-3 md:px-4">
+          <div className="flex items-center justify-between h-14 md:h-16">
+            <Link href={`/clubs/${slug}`} className="text-base md:text-xl font-bold truncate max-w-[120px] md:max-w-none">{club?.name || '球會'}</Link>
+            <Link href={`/clubs/${slug}`} className="text-xs md:text-sm px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all whitespace-nowrap">離開</Link>
+          </div>
+        </div>
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 px-3 pb-2 md:max-w-7xl md:mx-auto md:px-4">
+            {tabs.map(t => (
+              <Link key={t.href} href={t.href}
+                className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap text-xs md:text-sm ${
+                  pathname === t.href ? 'bg-[#C4A265] text-white' : 'hover:bg-white/10 text-white/60'
+                }`}>
+                {t.label}
+              </Link>
+            ))}
           </div>
         </div>
       </nav>

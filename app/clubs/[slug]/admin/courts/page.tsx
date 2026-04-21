@@ -207,17 +207,17 @@ export default function ClubAdminCourtsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-[#1A1A1A]">場地及時段管理</h1>
-        <div className="flex items-center gap-3 flex-wrap">
+    <div className="max-w-7xl mx-auto px-3 md:px-4 py-4 md:py-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg md:text-2xl font-bold text-[#1A1A1A]">場地及時段管理</h1>
           <button onClick={() => setShowNewCourt(true)}
-            className="px-4 py-2 bg-[#C4A265] text-white rounded-xl text-sm font-semibold hover:bg-[#b08d4f] transition-colors">
+            className="px-3 py-1.5 md:px-4 md:py-2 bg-[#C4A265] text-white rounded-xl text-xs md:text-sm font-semibold hover:bg-[#b08d4f] transition-colors">
             + 新增球場
           </button>
         </div>
-        <div className="flex items-center gap-2 bg-white rounded-xl shadow-sm px-4 py-2">
-          <span className="text-sm text-[#1A1A1A]/60">開放時間</span>
+        <div className="flex items-center gap-2 bg-white rounded-xl shadow-sm px-3 py-2">
+          <span className="text-xs md:text-sm text-[#1A1A1A]/60">開放時間</span>
           <select value={opHours.open} onChange={(e) => {
             const v = +e.target.value; setOpHours(p => ({ ...p, open: v })); updateSetting('open_hour', String(v));
           }} className="px-2 py-1 border rounded text-sm">
@@ -278,7 +278,7 @@ export default function ClubAdminCourtsPage() {
 
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
         <h2 className="font-bold text-[#1A1A1A] mb-3">球場預設價格</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
           {courts.map(c => (
             <div key={c.id} className="bg-[#FFF8F0] p-4 rounded-lg border border-[#1A1A1A]/10">
               <button onClick={() => setEditRate({ id: c.id, rate: c.hourly_rate, name: c.name, location: c.location || '', address: c.address || '', description: c.description || '', facilities: c.facilities || '', indoor: c.indoor || false, visibility: (c.visibility || 'public') as Visibility, image_url: (c as any).image_url || '' })} className="w-full text-left">
@@ -451,26 +451,26 @@ export default function ClubAdminCourtsPage() {
               </div>
       )}
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-1 md:gap-2 mb-4">
         <button onClick={() => setWeekPage(0)} disabled={weekPage === 0}
-          className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center disabled:opacity-20 text-sm">‹</button>
-        <div className="flex gap-1.5 flex-1 justify-center">
+          className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white shadow-sm flex items-center justify-center disabled:opacity-20 text-sm flex-shrink-0">‹</button>
+        <div className="flex gap-1 md:gap-1.5 flex-1 justify-center overflow-x-auto">
           {dates.slice(weekPage * 7, weekPage * 7 + 7).map((d, i) => {
             const idx = weekPage * 7 + i;
             return (
               <button key={idx} onClick={() => setDateIdx(idx)}
-                className={`flex flex-col items-center px-3 py-2 rounded-xl min-w-[64px] text-xs ${
+                className={`flex flex-col items-center px-2 md:px-3 py-1.5 md:py-2 rounded-xl min-w-[48px] md:min-w-[64px] text-[10px] md:text-xs ${
                   dateIdx === idx ? 'bg-[#1A1A1A] text-[#FFF8F0]' : 'bg-white text-[#1A1A1A] hover:bg-[#1A1A1A]/10'
                 }`}>
                 <span>星期{DAY_NAMES[d.getDay()]}</span>
-                <span className="text-base font-bold">{d.getDate()}</span>
-                <span className="text-[10px]">{d.getMonth() + 1}月</span>
+                <span className="text-sm md:text-base font-bold">{d.getDate()}</span>
+                <span className="text-[9px] md:text-[10px]">{d.getMonth() + 1}月</span>
               </button>
             );
           })}
         </div>
         <button onClick={() => setWeekPage(1)} disabled={weekPage === 1}
-          className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center disabled:opacity-20 text-sm">›</button>
+          className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white shadow-sm flex items-center justify-center disabled:opacity-20 text-sm flex-shrink-0">›</button>
       </div>
 
       {/* Mobile view */}
